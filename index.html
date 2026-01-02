@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>球場預約</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <!-- 背景裝飾 -->
+  <div class="bg-decor" aria-hidden="true"></div>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="wrap topbar__inner">
+      <a class="brand" href="./index.html" aria-label="回到預約">
+        <img src="./logo.png" class="logo" alt="LOGO" />
+        <span class="brand__text">Court Booking</span>
+      </a>
+
+      <nav class="nav">
+        <a class="nav__link is-active" href="./index.html">預約</a>
+        <a class="nav__link" href="./venues.html">場地資訊</a>
+        <a class="nav__link" href="./my.html" id="navMy">我的預約</a>
+      </nav>
+
+      <div class="account">
+        <div class="account__user" id="userBadge" hidden>
+          <span class="dot"></span>
+          <span id="userName">User</span>
+        </div>
+
+        <button class="btn btn--ghost" id="btnLogin">登入</button>
+        <button class="btn btn--ghost" id="btnLogout" hidden>登出</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero reveal">
+      <h1 class="hero__title">羽球場預約</h1>
+      <p class="hero__sub">
+        登入前：可以看「哪些時段可租借 / 已被租走」，但不顯示個人資訊與我的預約。<br/>
+        登入後：可直接「建立預約」並在我的預約查看。
+      </p>
+    </section>
+
+    <section class="panel reveal">
+      <div class="panel__head">
+        <div class="panel__left">
+          <label class="label" for="datePick">選擇日期</label>
+          <input type="date" id="datePick" class="input" />
+        </div>
+
+        <div class="panel__right">
+          <div class="legend">
+            <span class="chip chip--free">可預約</span>
+            <span class="chip chip--taken">已被租走</span>
+            <span class="chip chip--mine" id="mineLegend" hidden>我的預約</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="grid">
+        <!-- JS render -->
+      </div>
+
+      <div class="hint" id="hintArea"></div>
+    </section>
+  </main>
+
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <div class="modal__head">
+        <h2 id="loginTitle">登入</h2>
+        <button class="iconbtn" aria-label="關閉" data-close="1">✕</button>
+      </div>
+
+      <div class="modal__body">
+        <p class="muted">
+          目前是「前端示範登入」。之後接後端（Python/API）再換成真正驗證。
+        </p>
+
+        <label class="label" for="loginName">顯示名稱</label>
+        <input id="loginName" class="input" placeholder="例如：Alger" maxlength="30" />
+
+        <label class="label" for="loginPass">密碼</label>
+        <input id="loginPass" type="password" class="input" placeholder="任意輸入即可" />
+
+        <div class="row">
+          <button class="btn" id="btnDoLogin">登入</button>
+          <button class="btn btn--ghost" data-close="1">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/booking.js"></script>
+</body>
+</html>

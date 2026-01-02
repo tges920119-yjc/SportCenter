@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>我的預約</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="bg-decor" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="wrap topbar__inner">
+      <a class="brand" href="./index.html" aria-label="回到預約">
+        <img src="./logo.png" class="logo" alt="LOGO" />
+        <span class="brand__text">Court Booking</span>
+      </a>
+
+      <nav class="nav">
+        <a class="nav__link" href="./index.html">預約</a>
+        <a class="nav__link" href="./venues.html">場地資訊</a>
+        <a class="nav__link is-active" href="./my.html" id="navMy">我的預約</a>
+      </nav>
+
+      <div class="account">
+        <div class="account__user" id="userBadge" hidden>
+          <span class="dot"></span>
+          <span id="userName">User</span>
+        </div>
+        <button class="btn btn--ghost" id="btnLogin">登入</button>
+        <button class="btn btn--ghost" id="btnLogout" hidden>登出</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero reveal">
+      <h1 class="hero__title">我的預約</h1>
+      <p class="hero__sub">登入後才能查看與取消（取消會立即釋放時段）。</p>
+    </section>
+
+    <section class="panel reveal">
+      <div class="hint" id="myHint"></div>
+      <div class="table" id="myTable"></div>
+    </section>
+  </main>
+
+  <script src="./js/booking.js"></script>
+</body>
+</html>
