@@ -1,104 +1,174 @@
-// index.html 已經有：#datePick #grid #hintArea
-const elDate = document.getElementById("datePick");
-const elGrid = document.getElementById("grid");
-const elHint = document.getElementById("hintArea");
+// js/booking.js
+(function () {
+  // ------- helpers -------
+  const $ = (id) => document.getElementById(id);
+  const qs = (sel, root = document) => root.querySelector(sel);
 
-function todayStr() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
+  function todayStr() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
 
-function setHint(msg) {
-  elHint.textContent = msg || "";
-}
+  function setText(id, msg) {
+    const el = $(id);
+    if (el) el.textContent = msg ?? "";
+  }
 
-// 先用固定時段（你先前設定 08-12）
-const SLOTS = ["08:00", "09:00", "10:00", "11:00"];
-// 先用固定場地（之後可改成後端回傳）
-const COURTS = [
-  { id: 1, name: "A" },
-  { id: 2, name: "B" },
-];
+  function show(el) { if (el) el.hidden = false; }
+  function hide(el) { if (el) el.hidden = true; }
 
-// 把 YYYY-MM-DD + HH:MM 組成 ISO（本地時間）
-function toISO(dateStr, hhmm) {
-  return `${dateStr}T${hhmm}:00`;
-}
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem("demo_user") || "null"); }
+    catch { return null; }
+  }
+  function setUser(u) {
+    if (!u) localStorage.removeItem("demo_user");
+    else localStorage.setItem("demo_user", JSON.stringify(u));
+  }
 
-// === 你的後端 API ===
-async function fetchAvailability(dateStr) {
-  return api(`/api/availability?date=${encodeURIComponent(dateStr)}`);
-}
+  function renderUserUI() {
+    const u = getUser();
+    const badge = $("userBadge");
+    const userName = $("userName");
+    const btnLogin = $("btnLogin");
+    const btnLogout = $("btnLogout");
+    const mineLegend = $("mineLegend");
 
-async function postBooking(courtId, startAtISO) {
-  return api(`/api/bookings`, {
-    method: "POST",
-    body: { court_id: courtId, start_at: startAtISO },
-  });
-}
-
-// 先渲染基本格子（之後再套真實 booked 狀態）
-function renderGrid(dateStr, availabilityData) {
-  // 目前先把 JSON 放到提示區，方便你我對齊欄位
-  setHint(`availability raw: ${JSON.stringify(availabilityData)}`);
-
-  elGrid.innerHTML = "";
-
-  for (const c of COURTS) {
-    for (const t of SLOTS) {
-      const startISO = toISO(dateStr, t);
-
-      const card = document.createElement("div");
-      card.className = "cell"; // 你的 CSS 如果不是 cell，告訴我我幫你對齊
-
-      // 先預設都可預約
-      card.innerHTML = `
-        <div class="cell__top">
-          <div class="cell__court">Court ${c.name}</div>
-          <div class="cell__time">${t}</div>
-        </div>
-        <button class="btn btn--sm cell__btn">預約</button>
-      `;
-
-      const btn = card.querySelector("button");
-      btn.addEventListener("click", async () => {
-        btn.disabled = true;
-        btn.textContent = "處理中…";
-        try {
-          await postBooking(c.id, startISO);
-          await load(); // 成功後重抓
-        } catch (e) {
-          alert(e.message);
-          btn.disabled = false;
-          btn.textContent = "預約";
-        }
-      });
-
-      elGrid.appendChild(card);
+    if (u) {
+      if (userName) userName.textContent = u.name || "User";
+      show(badge);
+      hide(btnLogin);
+      show(btnLogout);
+      show(mineLegend);
+    } else {
+      hide(badge);
+      show(btnLogin);
+      hide(btnLogout);
+      hide(mineLegend);
     }
   }
-}
 
-async function load() {
-  const dateStr = elDate.value || todayStr();
-  elDate.value = dateStr;
+  // ------- modal wiring (index.html 才有 modal) -------
+  function setupLoginModal() {
+    const modal = $("loginModal");
+    if (!modal) return;
 
-  setHint("載入中...");
-  try {
-    const data = await fetchAvailability(dateStr);
-    renderGrid(dateStr, data);
-    setHint("載入完成（已顯示 availability raw 方便對欄位）");
-  } catch (e) {
-    setHint(`載入失敗：${e.message}`);
+    const btnLogin = $("btnLogin");
+    const btnLogout = $("btnLogout");
+    const btnDoLogin = $("btnDoLogin");
+    const inputName = $("loginName");
+
+    function openModal() {
+      modal.setAttribute("aria-hidden", "false");
+      modal.classList.add("is-open");
+      if (inputName) inputName.focus();
+    }
+    function closeModal() {
+      modal.setAttribute("aria-hidden", "true");
+      modal.classList.remove("is-open");
+    }
+
+    // open
+    if (btnLogin) btnLogin.addEventListener("click", openModal);
+
+    // close (點背景/✕/取消)
+    modal.addEventListener("click", (e) => {
+      const t = e.target;
+      if (t && t.getAttribute && t.getAttribute("data-close") === "1") closeModal();
+    });
+
+    // do login (示範登入：只存 localStorage)
+    if (btnDoLogin) {
+      btnDoLogin.addEventListener("click", () => {
+        const name = (inputName?.value || "").trim() || "User";
+        setUser({ name });
+        renderUserUI();
+        closeModal();
+      });
+    }
+
+    // logout
+    if (btnLogout) {
+      btnLogout.addEventListener("click", () => {
+        setUser(null);
+        renderUserUI();
+      });
+    }
   }
-}
 
-// 日期變更就重新載入
-elDate.addEventListener("change", load);
+  // ------- API calls -------
+  async function getAvailability(date) {
+    const q = date ? `?date=${encodeURIComponent(date)}` : "";
+    return window.api(`/api/availability${q}`);
+  }
 
-// 初始化
-elDate.value = todayStr();
-load();
+  async function listBookings() {
+    return window.api(`/api/bookings`);
+  }
+
+  // ------- page actions (給 venues/my 用) -------
+  async function loadAvailability() {
+    const datePick = $("datePick"); // index.html 有
+    const date = datePick?.value || todayStr();
+
+    try {
+      setText("hintArea", "載入中…");
+      const data = await getAvailability(date);
+
+      // venues.html / my.html 如果有 #out 就印在那
+      const out = $("out");
+      if (out) out.textContent = JSON.stringify(data, null, 2);
+
+      // index.html 如果有 grid，先不硬 render（等你貼 API 格式後我幫你做真正格子狀態）
+      const grid = $("grid");
+      if (grid) {
+        // 暫時把 raw 顯示在 hintArea，確認真的拿到資料
+        setText("hintArea", "已載入空位（先顯示 raw 方便對齊）：" + JSON.stringify(data));
+      } else {
+        setText("hintArea", "載入完成");
+      }
+    } catch (e) {
+      setText("hintArea", "載入失敗：" + e.message);
+      alert(e.message);
+    }
+  }
+
+  async function loadMyBookings() {
+    try {
+      const data = await listBookings();
+      const out = $("out");
+      if (out) out.textContent = JSON.stringify(data, null, 2);
+      setText("hintArea", "載入完成");
+    } catch (e) {
+      setText("hintArea", "載入失敗：" + e.message);
+      alert(e.message);
+    }
+  }
+
+  // 讓 HTML 的 onclick 可以呼叫
+  window.loadAvailability = loadAvailability;
+  window.loadMyBookings = loadMyBookings;
+
+  // ------- init -------
+  document.addEventListener("DOMContentLoaded", async () => {
+    // 預設日期
+    const datePick = $("datePick");
+    if (datePick && !datePick.value) datePick.value = todayStr();
+    if (datePick) datePick.addEventListener("change", loadAvailability);
+
+    renderUserUI();
+    setupLoginModal();
+
+    // 健康檢查（把問題顯示出來，避免你以為沒反應其實是 API 404/CORS）
+    try {
+      await window.api("/api/health");
+      // ok
+    } catch (e) {
+      console.error(e);
+      // 不彈窗，避免干擾；但你可在 console 看錯誤
+    }
+  });
+})();
