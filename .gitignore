@@ -1,0 +1,14 @@
+# === Backend (永遠不要推) ===
+backend/
+
+# Python / venv
+__pycache__/
+*.pyc
+.venv/
+env/
+.env
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/

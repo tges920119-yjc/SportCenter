@@ -1,21 +1,25 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const header = `
-    <header class="header">
-      <img src="logo.png" class="logo" alt="logo">
-      <nav>
-        <a href="index.html">預約</a>
-        <a href="info.html">場地資訊</a>
-        <a href="my-bookings.html">我的預約</a>
-      </nav>
-    </header>
-  `;
+// === 正式 API（Cloudflare Tunnel）===
+const API_BASE = "https://api.novrise.org";
 
-  const footer = `
-    <footer class="footer">
-      © 2026 羽球場預約系統
-    </footer>
-  `;
+// 共用 fetch 封裝
+async function api(path, options = {}) {
+  const opts = Object.assign({ method: "GET", headers: {} }, options);
 
-  document.body.insertAdjacentHTML('afterbegin', header);
-  document.body.insertAdjacentHTML('beforeend', footer);
-});
+  // 自動 JSON body
+  if (opts.body && typeof opts.body === "object") {
+    opts.headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(opts.body);
+  }
+
+  const r = await fetch(API_BASE + path, opts);
+
+  // 盡量把錯誤訊息讀出來
+  const text = await r.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+
+  if (!r.ok) {
+    throw new Error(data?.detail || text || `HTTP ${r.status}`);
+  }
+  return data;
+}

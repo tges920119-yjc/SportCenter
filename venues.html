@@ -1,55 +1,28 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>場地資訊</title>
-  <link rel="stylesheet" href="./css/style.css" />
+  <meta charset="UTF-8">
+  <title>場地預約</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="bg-decor" aria-hidden="true"></div>
 
-  <header class="topbar">
-    <div class="wrap topbar__inner">
-      <a class="brand" href="./index.html" aria-label="回到預約">
-        <img src="./logo.png" class="logo" alt="LOGO" />
-        <span class="brand__text">Court Booking</span>
-      </a>
+<h1>場地預約</h1>
 
-      <nav class="nav">
-        <a class="nav__link" href="./index.html">預約</a>
-        <a class="nav__link is-active" href="./venues.html">場地資訊</a>
-        <a class="nav__link" href="./my.html" id="navMy">我的預約</a>
-      </nav>
+<button onclick="loadAvailability()">載入空位</button>
+<pre id="out"></pre>
 
-      <div class="account">
-        <div class="account__user" id="userBadge" hidden>
-          <span class="dot"></span>
-          <span id="userName">User</span>
-        </div>
-        <button class="btn btn--ghost" id="btnLogin">登入</button>
-        <button class="btn btn--ghost" id="btnLogout" hidden>登出</button>
-      </div>
-    </div>
-  </header>
+<script src="js/common.js"></script>
+<script src="js/booking.js"></script>
 
-  <main class="wrap">
-    <section class="hero reveal">
-      <h1 class="hero__title">場地資訊</h1>
-      <p class="hero__sub">先用靜態資訊，之後再從後端資料庫讀取。</p>
-    </section>
+<script>
+  async function loadAvailability() {
+    const today = new Date().toISOString().slice(0, 10);
+    const data = await getAvailability({ date: today });
+    document.getElementById("out").textContent =
+      JSON.stringify(data, null, 2);
+  }
+</script>
 
-    <section class="panel reveal">
-      <h2 class="h2">羽球場</h2>
-      <ul class="list">
-        <li>場地：A、B</li>
-        <li>可預約時段：08:00 - 12:00（每小時一格）</li>
-        <li>單次費用：TWD 250 / 時段</li>
-      </ul>
-      <p class="muted">提示：未來你要加「尖峰/離峰」或「假日價」時，才需要進階價目規則。</p>
-    </section>
-  </main>
-
-  <script src="./js/booking.js"></script>
 </body>
 </html>
