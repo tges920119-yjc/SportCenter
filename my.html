@@ -1,18 +1,49 @@
-<link rel="stylesheet" href="css/style.css">
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Bookings</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
 
-<h1>我的預約</h1>
-<button onclick="loadMyBookings()">重新整理</button>
-<pre id="out"></pre>
+<body>
+  <!-- 你原本 common.js 會找這些 id（登入徽章/按鈕） -->
+  <header class="topbar">
+    <div class="topbar__left">
+      <a class="brand" href="./index.html">Booking</a>
+      <nav class="nav">
+        <a href="./index.html">預約</a>
+        <a class="is-active" href="./my.html">我的預約</a>
+        <a href="./venues.html">場地</a>
+      </nav>
+    </div>
 
-<script src="js/common.js"></script>
-<script src="js/booking.js"></script>
+    <div class="topbar__right">
+      <span id="userBadge" class="badge" hidden>
+        Hi, <b id="userName">User</b>
+      </span>
+      <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
+      <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
+    </div>
+  </header>
 
-<script>
-  async function loadMyBookings() {
-    const data = await listBookings();
-    document.getElementById("out").textContent =
-      JSON.stringify(data, null, 2);
-  }
+  <!-- common.js 會用到的 modal（如果你已經有，可保留同 id 結構） -->
+  <div id="loginModal" class="modal" aria-hidden="true">
+    <div class="modal__panel">
+      <div class="modal__head">
+        <h3>登入（示範）</h3>
+        <button class="btn btn--ghost" data-close="1" type="button">✕</button>
+      </div>
+      <div class="modal__body">
+        <label class="field">
+          <span class="field__label">顯示名稱</span>
+          <input id="loginName" class="input" placeholder="例如：YJC" />
+        </label>
+        <button id="btnDoLogin" class="btn" type="button">登入</button>
+      </div>
+    </div>
+    <div class="modal__backdrop" data-close="1"></div>
+  </div>
 
-  loadMyBookings();
-</script>
+  <main class=

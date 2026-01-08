@@ -4,11 +4,17 @@
     user: null,
   };
 
-  function $(sel) { return document.querySelector(sel); }
+  function $(sel) {
+    return document.querySelector(sel);
+  }
 
-  // 統一 API 呼叫：永遠打同源 /api/...
+  // ===============================
+  // 統一 API 呼叫（同源 /api）
+  // ===============================
   async function api(path, options = {}) {
-    const url = `/api${path.startsWith("/") ? path : `/${path}`}`;
+    const url = path.startsWith("/api")
+      ? path
+      : `/api${path.startsWith("/") ? path : `/${path}`}`;
 
     const res = await fetch(url, {
       method: options.method || "GET",
@@ -23,28 +29,40 @@
       let msg = `API ${res.status}`;
       try {
         const data = await res.json();
-        if (data?.detail) msg = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
+        if (data?.detail)
+          msg = typeof data.detail === "string"
+            ? data.detail
+            : JSON.stringify(data.detail);
         else if (data?.message) msg = data.message;
       } catch {}
       throw new Error(msg);
     }
+
+    // 204 No Content
+    if (res.status === 204) return null;
     return res.json();
   }
 
-  // ===== Demo login（目前仍是前端示範登入）=====
+  // ===============================
+  // Demo login（前端示範）
+  // ===============================
   function getUser() {
-    try { return JSON.parse(localStorage.getItem("demo_user") || "null"); }
-    catch { return null; }
+    try {
+      return JSON.parse(localStorage.getItem("demo_user") || "null");
+    } catch {
+      return null;
+    }
   }
+
   function setUser(u) {
     state.user = u;
-    localStorage.setItem("demo_user", JSON.stringify(u));
+    if (u) localStorage.setItem("demo_user", JSON.stringify(u));
+    else localStorage.removeItem("demo_user");
     renderAccount();
   }
+
   function clearUser() {
-    state.user = null;
-    localStorage.removeItem("demo_user");
-    renderAccount();
+    setUser(null);
   }
 
   function openModal(id) {
@@ -53,6 +71,7 @@
     el.classList.add("is-open");
     el.setAttribute("aria-hidden", "false");
   }
+
   function closeModal(id) {
     const el = $(id);
     if (!el) return;
@@ -84,14 +103,16 @@
     const btnLogout = $("#btnLogout");
     const modal = $("#loginModal");
 
-    if (btnLogin) btnLogin.addEventListener("click", () => openModal("#loginModal"));
-    if (btnLogout) btnLogout.addEventListener("click", () => clearUser());
+    if (btnLogin)
+      btnLogin.addEventListener("click", () => openModal("#loginModal"));
+    if (btnLogout)
+      btnLogout.addEventListener("click", () => clearUser());
 
-    // 關閉 modal
     if (modal) {
       modal.addEventListener("click", (e) => {
         const t = e.target;
-        if (t && t.dataset && t.dataset.close) closeModal("#loginModal");
+        if (t && t.dataset && t.dataset.close)
+          closeModal("#loginModal");
       });
     }
 
@@ -109,7 +130,9 @@
     }
   }
 
-  // 對外提供（booking.js / my.js 會用到）
+  // ===============================
+  // 對外提供
+  // ===============================
   window.api = api;
   window.auth = {
     getUser: () => state.user,
