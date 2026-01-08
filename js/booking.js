@@ -30,26 +30,33 @@
   }
 
   function renderUserUI() {
-    const u = getUser();
-    const badge = $("userBadge");
-    const userName = $("userName");
-    const btnLogin = $("btnLogin");
-    const btnLogout = $("btnLogout");
-    const mineLegend = $("mineLegend");
-
-    if (u) {
-      if (userName) userName.textContent = u.name || "User";
-      show(badge);
-      hide(btnLogin);
-      show(btnLogout);
-      show(mineLegend);
-    } else {
-      hide(badge);
-      show(btnLogin);
-      hide(btnLogout);
-      hide(mineLegend);
-    }
+  const u = getUser();
+  const badge = document.getElementById("userBadge");
+  const userName = document.getElementById("userName");
+  const btnLogin = document.getElementById("btnLogin");
+  const btnLogout = document.getElementById("btnLogout");
+  if (btnLogout) {
+    btnLogout.addEventListener("click", () => {
+      setUser(null);
+      renderUserUI();
+    });
   }
+  const mineLegend = document.getElementById("mineLegend");
+
+  if (u) {
+    if (userName) userName.textContent = u.name || "User";
+    if (badge) badge.hidden = false;
+    if (btnLogin) btnLogin.hidden = true;
+    if (btnLogout) btnLogout.hidden = false;
+    if (mineLegend) mineLegend.hidden = false;
+  } else {
+    if (userName) userName.textContent = "User";   // ✅ 登出後重設
+    if (badge) badge.hidden = true;                // ✅ 隱藏 badge
+    if (btnLogin) btnLogin.hidden = false;         // ✅ 顯示登入
+    if (btnLogout) btnLogout.hidden = true;        // ✅ 隱藏登出
+    if (mineLegend) mineLegend.hidden = true;      // ✅ 隱藏「我的預約」圖例
+  }
+}
 
   // ------- modal wiring (index.html 才有 modal) -------
   function setupLoginModal() {

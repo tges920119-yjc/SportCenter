@@ -35,12 +35,15 @@ body{
 
 /* 背景 info.png 融合 */
 .bg-decor{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(900px 600px at 70% 30%, rgba(125,211,252,0.10), transparent 60%),
-    radial-gradient(900px 700px at 30% 70%, rgba(167,139,250,0.10), transparent 60%);
+  position: fixed;
+  inset: 0;
+  background-image: url("../info.png"); /* 如果你背景圖是 info.PNG */
+  background-size: cover;
+  background-position: center center;   /* ✅ 置中 */
+  background-repeat: no-repeat;
+  opacity: 0.35;                        /* 想更清楚就調高/調低 */
+  pointer-events: none;
+  z-index: -1;
 }
 .bg-decor::after{
   content:"";
