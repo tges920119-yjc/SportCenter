@@ -1,5 +1,5 @@
 // js/common.js
-const API_BASE = "https://api.novrise.org";
+const API_BASE = "";
 
 async function api(path, options = {}) {
   const opts = Object.assign({ method: "GET", headers: {} }, options);
