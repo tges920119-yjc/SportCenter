@@ -79,24 +79,27 @@
     el.setAttribute("aria-hidden", "true");
   }
 
-  function renderAccount() {
-    const badge = $("#userBadge");
-    const name = $("#userName");
-    const btnLogin = $("#btnLogin");
-    const btnLogout = $("#btnLogout");
+function renderAccount() {
+  const badge = $("#userBadge");
+  const name = $("#userName");
+  const btnLogin = $("#btnLogin");
+  const btnLogout = $("#btnLogout");
 
-    const u = state.user;
-    if (u) {
-      if (badge) badge.hidden = false;
-      if (name) name.textContent = u.name || "User";
-      if (btnLogin) btnLogin.hidden = true;
-      if (btnLogout) btnLogout.hidden = false;
-    } else {
-      if (badge) badge.hidden = true;
-      if (btnLogin) btnLogin.hidden = false;
-      if (btnLogout) btnLogout.hidden = true;
-    }
+  const u = state.user;
+
+  if (u) {
+    if (badge) badge.hidden = false;
+    if (name) name.textContent = u.name || "";
+    if (btnLogin) btnLogin.hidden = true;
+    if (btnLogout) btnLogout.hidden = false;
+  } else {
+    // 未登入：整個 badge 不顯示（不再顯示 User）
+    if (badge) badge.hidden = true;
+    if (name) name.textContent = "";
+    if (btnLogin) btnLogin.hidden = false;
+    if (btnLogout) btnLogout.hidden = true;
   }
+}
 
   function bindLoginUI() {
     const btnLogin = $("#btnLogin");

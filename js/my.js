@@ -66,7 +66,13 @@
 
     if (!tbody) return;
 
-    const list = Array.isArray(rows) ? rows : (rows?.items || rows?.data || []);
+    const list =
+    Array.isArray(rows) ? rows :
+    Array.isArray(rows?.items) ? rows.items :
+    Array.isArray(rows?.data) ? rows.data :
+    Array.isArray(rows?.bookings) ? rows.bookings :
+    Array.isArray(rows?.rows) ? rows.rows :
+    [];
     tbody.innerHTML = "";
 
     if (!list || list.length === 0) {
