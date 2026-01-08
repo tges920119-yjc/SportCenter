@@ -37,11 +37,13 @@ body{
 .bg-decor{
   position: fixed;
   inset: 0;
-  background-image: url("../info.png"); /* 如果你背景圖是 info.PNG */
+  background-image: url("../info.PNG"); /* 或 bg.webp */
   background-size: cover;
-  background-position: center center;   /* ✅ 置中 */
+  background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.35;                        /* 想更清楚就調高/調低 */
+
+  opacity: 0.35;
+
   pointer-events: none;
   z-index: -1;
 }
@@ -415,4 +417,25 @@ body{
 
 .slot__meta {
   margin: 10px 0;
+}
+
+main.wrap{
+  position: relative;
+  z-index: 1;
+  padding-top: 48px;
+  padding-bottom: 80px;
+}
+
+#grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.slot{
+  background: rgba(20,30,45,0.9);
+  border-radius: 16px;
+  padding: 16px;
+  color: #fff;
 }
