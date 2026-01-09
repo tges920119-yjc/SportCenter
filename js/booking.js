@@ -2,51 +2,54 @@
 (() => {
   // ---------- helpers ----------
   const $ = (id) => document.getElementById(id);
-  const API_BASE = "/api";
 
   function todayStr() {
     const d = new Date();
-    return d.toISOString().slice(0, 10);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
   }
 
   function setHint(msg) {
     const el = $("hintArea");
-    if (el) el.textContent = msg || "";
+    if (!el) return;
+    el.textContent = msg || "";
   }
 
-  // ---------- API wrappers ----------
+  // 成功訊息自動消失（錯誤就保留）
+  function setHintAutoClear(msg, ms = 2000) {
+    setHint(msg);
+    if (!msg) return;
+    window.clearTimeout(setHintAutoClear._t);
+    setHintAutoClear._t = window.setTimeout(() => setHint(""), ms);
+  }
+
+  function fmtHHMM(isoStr) {
+    // "2026-01-08T08:00:00" -> "08:00"
+    if (!isoStr) return "";
+    const t = isoStr.split("T")[1] || "";
+    return t.slice(0, 5);
+  }
+
+  // ---------- API wrappers (common.js 提供 window.api) ----------
+  // ⚠️ 注意：common.js 已經會補 /api，所以這裡不要再寫 /api/xxx
   async function getAvailability(courtId, dateStr) {
     const qs = new URLSearchParams({
       court_id: String(courtId),
       date: dateStr,
     });
-    return window.api(`${API_BASE}/availability?${qs.toString()}`);
-  }
-
-  async function listBookings() {
-    return window.api(`${API_BASE}/bookings`);
+    return window.api(`/availability?${qs.toString()}`);
   }
 
   async function createBooking(payload) {
-    return window.api(`${API_BASE}/bookings`, {
+    return window.api(`/bookings`, {
       method: "POST",
       body: payload,
     });
   }
 
-  async function cancelBooking(bookingId) {
-    return window.api(
-      `${API_BASE}/bookings/${encodeURIComponent(bookingId)}/cancel`,
-      { method: "POST" }
-    );
-  }
-
-  // ---------- UI helpers ----------
-  function fmtHHMM(isoStr) {
-    if (!isoStr) return "";
-    return isoStr.split("T")[1].slice(0, 5);
-  }
-
+  // ---------- Render grid ----------
   function buildCell({ courtLabel, slot, isAvailable, onBook }) {
     const card = document.createElement("div");
     card.className = "slot";
@@ -54,44 +57,43 @@
     const start = fmtHHMM(slot.start_at);
     const end = fmtHHMM(slot.end_at);
 
+    const stateChipClass = isAvailable ? "chip chip--free" : "chip chip--taken";
+    const stateText = isAvailable ? "可預約" : "已被租走";
+
     card.innerHTML = `
       <div class="slot__top">
         <div class="slot__court">Court ${courtLabel}</div>
         <div class="slot__time">${start} - ${end}</div>
       </div>
+
       <div class="slot__meta">
-        <span class="chip ${
-          isAvailable ? "chip--free" : "chip--taken"
-        }">
-          ${isAvailable ? "可預約" : "已被租走"}
-        </span>
+        <span class="${stateChipClass}">${stateText}</span>
       </div>
+
       <div class="slot__actions"></div>
     `;
 
+    const actions = card.querySelector(".slot__actions");
     if (isAvailable) {
       const btn = document.createElement("button");
       btn.className = "btn";
       btn.textContent = "預約";
-      btn.onclick = onBook;
-      card.querySelector(".slot__actions").appendChild(btn);
+      btn.addEventListener("click", onBook);
+      actions.appendChild(btn);
     }
 
     return card;
   }
 
-  function normalizeAvail(x) {
-    if (!x) return { ok: false, slots: [] };
-    return {
-      ok: x.ok ?? true,
-      slots: x.slots || [],
-    };
-  }
-
-  // ---------- main render ----------
   async function renderIndexGrid(dateStr) {
     const grid = $("grid");
     if (!grid) return;
+
+    if (!dateStr) {
+      setHint("請先選擇日期");
+      grid.innerHTML = "";
+      return;
+    }
 
     setHint("載入中...");
     grid.innerHTML = "";
@@ -102,21 +104,20 @@
         getAvailability(2, dateStr),
       ]);
 
-      const A = normalizeAvail(a);
-      const B = normalizeAvail(b);
-      if (!A.ok || !B.ok) {
-        setHint("資料格式錯誤");
+      if (!a?.ok || !b?.ok) {
+        setHint("availability 回傳格式不正確");
         return;
       }
 
       const groups = [
-        { label: "A", court_id: 1, slots: A.slots },
-        { label: "B", court_id: 2, slots: B.slots },
+        { label: "A", court_id: 1, slots: a.slots || [] },
+        { label: "B", court_id: 2, slots: b.slots || [] },
       ];
 
       for (const g of groups) {
         for (const slot of g.slots) {
           const isAvailable = Number(slot.is_available) === 1;
+
           const cell = buildCell({
             courtLabel: g.label,
             slot,
@@ -125,12 +126,13 @@
               try {
                 setHint("預約中...");
 
+                // 後端需要：date + start_time
                 const startAt = slot.start_at || "";
-                const d = startAt.split("T")[0] || "";                 // YYYY-MM-DD
-                const t = (startAt.split("T")[1] || "").slice(0, 5);   // HH:MM
+                const d = startAt.split("T")[0] || "";
+                const t = (startAt.split("T")[1] || "").slice(0, 5);
 
                 if (!d || !t) {
-                  throw new Error("時間格式不正確，請重新整理後再試一次");
+                  throw new Error("時間格式不正確，請重新整理頁面");
                 }
 
                 await createBooking({
@@ -139,56 +141,54 @@
                   start_time: t,
                 });
 
-                setHint("預約成功，重新載入...");
+                // 成功提示自動消失
+                setHintAutoClear("預約成功");
                 await renderIndexGrid(dateStr);
-                setHint("載入完成");
               } catch (e) {
                 console.error(e);
-                alert(e.message);
-                setHint("預約失敗：" + e.message);
-              }
-            }
 
+                // 讓錯誤訊息更人類一點
+                let msg = e?.message || "預約失敗";
+                if (msg.includes("uq_court_start") || msg.includes("duplicate") || msg.includes("Duplicate")) {
+                  msg = "此時段已被預約，請換其他時段";
+                }
+
+                alert(msg);
+                setHint("預約失敗：" + msg);
+              }
+            },
+          });
+
+          grid.appendChild(cell);
+        }
       }
 
-      setHint("載入完成");
+      setHintAutoClear("載入完成", 1200);
     } catch (e) {
       console.error(e);
-      setHint("載入失敗：" + e.message);
+      setHint("載入失敗：" + (e?.message || e));
     }
   }
-
-  // ---------- raw helpers (venues / my) ----------
-  window.loadAvailability = async () => {
-    const dateStr = $("datePick")?.value || todayStr();
-    const [a, b] = await Promise.all([
-      getAvailability(1, dateStr),
-      getAvailability(2, dateStr),
-    ]);
-    $("out").textContent = JSON.stringify({ A: a, B: b }, null, 2);
-  };
-
-  window.loadMyBookings = async () => {
-    const data = await listBookings();
-    $("out").textContent = JSON.stringify(data, null, 2);
-  };
-
-  window.cancelBooking = cancelBooking;
 
   // ---------- init ----------
   document.addEventListener("DOMContentLoaded", async () => {
     const datePick = $("datePick");
     if (datePick) {
-      datePick.value ||= todayStr();
-      datePick.onchange = () => renderIndexGrid(datePick.value);
+      // 預設給今天，避免出現空畫面
+      if (!datePick.value) datePick.value = todayStr();
+
+      datePick.addEventListener("change", () => {
+        renderIndexGrid(datePick.value);
+      });
+
       renderIndexGrid(datePick.value);
     }
 
-    // health check（靜默）
+    // 可選：健康檢查（不彈窗）
     try {
-      await window.api("/api/health");
+      await window.api("/health"); // ⚠️ 不要寫 /api/health
     } catch (e) {
-      console.warn("API health failed:", e.message);
+      console.warn("API health failed:", e?.message || e);
     }
   });
 })();

@@ -1,20 +1,11 @@
 // js/common.js  (same-origin /api)
 (() => {
-  const state = {
-    user: null,
-  };
+  const state = { user: null };
+  const $ = (sel) => document.querySelector(sel);
 
-  function $(sel) {
-    return document.querySelector(sel);
-  }
-
-  // ===============================
-  // 統一 API 呼叫（同源 /api）
-  // ===============================
+  // 統一 API 呼叫：永遠打同源 /api/...
   async function api(path, options = {}) {
-    const url = path.startsWith("/api")
-      ? path
-      : `/api${path.startsWith("/") ? path : `/${path}`}`;
+    const url = `/api${path.startsWith("/") ? path : `/${path}`}`;
 
     const res = await fetch(url, {
       method: options.method || "GET",
@@ -29,40 +20,37 @@
       let msg = `API ${res.status}`;
       try {
         const data = await res.json();
-        if (data?.detail)
-          msg = typeof data.detail === "string"
-            ? data.detail
-            : JSON.stringify(data.detail);
+        if (data?.detail) msg = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
         else if (data?.message) msg = data.message;
+        else msg = JSON.stringify(data);
       } catch {}
       throw new Error(msg);
     }
 
-    // 204 No Content
-    if (res.status === 204) return null;
-    return res.json();
-  }
-
-  // ===============================
-  // Demo login（前端示範）
-  // ===============================
-  function getUser() {
+    // 有些 API 可能回空內容，這裡保底
     try {
-      return JSON.parse(localStorage.getItem("demo_user") || "null");
+      return await res.json();
     } catch {
       return null;
     }
   }
 
+  // ===== Demo login（目前仍是前端示範登入）=====
+  function getUser() {
+    try { return JSON.parse(localStorage.getItem("demo_user") || "null"); }
+    catch { return null; }
+  }
+
   function setUser(u) {
     state.user = u;
-    if (u) localStorage.setItem("demo_user", JSON.stringify(u));
-    else localStorage.removeItem("demo_user");
+    localStorage.setItem("demo_user", JSON.stringify(u));
     renderAccount();
   }
 
   function clearUser() {
-    setUser(null);
+    state.user = null;
+    localStorage.removeItem("demo_user");
+    renderAccount();
   }
 
   function openModal(id) {
@@ -79,43 +67,39 @@
     el.setAttribute("aria-hidden", "true");
   }
 
-function renderAccount() {
-  const badge = $("#userBadge");
-  const name = $("#userName");
-  const btnLogin = $("#btnLogin");
-  const btnLogout = $("#btnLogout");
+  function renderAccount() {
+    const badge = $("#userBadge");
+    const name = $("#userName");
+    const btnLogin = $("#btnLogin");
+    const btnLogout = $("#btnLogout");
 
-  const u = state.user;
-
-  if (u) {
-    if (badge) badge.hidden = false;
-    if (name) name.textContent = u.name || "";
-    if (btnLogin) btnLogin.hidden = true;
-    if (btnLogout) btnLogout.hidden = false;
-  } else {
-    // 未登入：整個 badge 不顯示（不再顯示 User）
-    if (badge) badge.hidden = true;
-    if (name) name.textContent = "";
-    if (btnLogin) btnLogin.hidden = false;
-    if (btnLogout) btnLogout.hidden = true;
+    const u = state.user;
+    if (u) {
+      if (badge) badge.hidden = false;
+      if (name) name.textContent = u.name || "User";
+      if (btnLogin) btnLogin.hidden = true;
+      if (btnLogout) btnLogout.hidden = false;
+    } else {
+      if (badge) badge.hidden = true;
+      if (name) name.textContent = ""; // 不登入就不要顯示 User 字樣
+      if (btnLogin) btnLogin.hidden = false;
+      if (btnLogout) btnLogout.hidden = true;
+    }
   }
-}
 
   function bindLoginUI() {
     const btnLogin = $("#btnLogin");
     const btnLogout = $("#btnLogout");
     const modal = $("#loginModal");
 
-    if (btnLogin)
-      btnLogin.addEventListener("click", () => openModal("#loginModal"));
-    if (btnLogout)
-      btnLogout.addEventListener("click", () => clearUser());
+    if (btnLogin) btnLogin.addEventListener("click", () => openModal("#loginModal"));
+    if (btnLogout) btnLogout.addEventListener("click", () => clearUser());
 
+    // 關閉 modal
     if (modal) {
       modal.addEventListener("click", (e) => {
         const t = e.target;
-        if (t && t.dataset && t.dataset.close)
-          closeModal("#loginModal");
+        if (t && t.dataset && t.dataset.close) closeModal("#loginModal");
       });
     }
 
@@ -133,9 +117,7 @@ function renderAccount() {
     }
   }
 
-  // ===============================
-  // 對外提供
-  // ===============================
+  // 對外提供（booking.js / my.js 會用到）
   window.api = api;
   window.auth = {
     getUser: () => state.user,
