@@ -4,76 +4,38 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Court Booking</title>
-  <link rel="stylesheet" href="./css/style.css" />
+
+  <link rel="stylesheet" href="css/style.css?v=20260109a" />
+  <!-- favicon 先不管 -->
 </head>
 
-<!-- ===== Login Modal ===== -->
-<div id="loginModal" class="modal" aria-hidden="true">
-  <div class="modal__backdrop" data-close="1"></div>
-
-  <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-    <div class="modal__head">
-      <h3 id="loginTitle">登入（示範）</h3>
-      <button class="modal__close" type="button" data-close="1">×</button>
-    </div>
-
-    <div class="modal__body">
-      <label class="field">
-        <span class="field__label">顯示名稱</span>
-        <input id="loginName" class="input" type="text" placeholder="例如：Jason" />
-      </label>
-    </div>
-
-    <div class="modal__foot">
-      <button id="btnDoLogin" class="btn" type="button">登入</button>
-      <button class="btn btn--ghost" type="button" data-close="1">取消</button>
-    </div>
-  </div>
-</div>
-
-
 <body>
-  <!-- Header：給 common.js 使用（登入/登出/顯示名稱） -->
-  <header class="topbar">
-    <div class="topbar__left">
-      <a class="brand" href="./index.html">Court Booking</a>
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <div class="site-header__left">
+      <div class="brand">
+        <span class="brand__title">Court Booking</span>
+      </div>
 
-      <nav class="nav">
-        <a class="is-active" href="./index.html">預約</a>
-        <a href="./venues.html">場地資訊</a>
-        <a href="./my.html">我的預約</a>
+      <nav class="site-nav">
+        <a class="site-nav__link" href="index.html">預約</a>
+        <a class="site-nav__link" href="venues.html">場地資訊</a>
+        <a class="site-nav__link" href="my.html">我的預約</a>
       </nav>
     </div>
 
-    <div class="topbar__right">
-      <span id="userBadge" class="badge" hidden>
-        Hi, <b id="userName"></b>
+    <div class="site-header__right">
+      <span id="userBadge" class="user-badge" hidden>
+        <span class="user-dot"></span>
+        <span id="userName">User</span>
       </span>
+
       <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
       <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
     </div>
   </header>
 
-  <!-- Login Modal：給 common.js 使用 -->
-  <div id="loginModal" class="modal" aria-hidden="true">
-    <div class="modal__panel">
-      <div class="modal__head">
-        <h3>登入（示範）</h3>
-        <button class="btn btn--ghost" data-close="1" type="button">✕</button>
-      </div>
-
-      <div class="modal__body">
-        <label class="field">
-          <span class="field__label">顯示名稱</span>
-          <input id="loginName" class="input" placeholder="例如：YJC" />
-        </label>
-        <button id="btnDoLogin" class="btn" type="button">登入</button>
-      </div>
-    </div>
-
-    <div class="modal__backdrop" data-close="1"></div>
-  </div>
-
+  <!-- ===== Main ===== -->
   <main class="container">
     <section class="panel">
       <div class="panel__head">
@@ -87,13 +49,10 @@
         </div>
       </div>
 
-      <!-- booking.js 會寫提示文字到這裡 -->
       <p id="hintArea" class="hint"></p>
 
-      <!-- ✅ booking.js 會把格子塞到這裡（重點：一定要有 id="grid"） -->
       <div id="grid" class="grid"></div>
 
-      <!-- Legend（可有可無，有的話你 CSS 可以做顏色說明） -->
       <div class="legend" id="mineLegend" hidden>
         <span class="chip chip--free">可預約</span>
         <span class="chip chip--taken">已被租走</span>
@@ -101,7 +60,31 @@
     </section>
   </main>
 
-  <!-- scripts：順序很重要，common.js 要先 -->
+  <!-- ===== Login Modal ===== -->
+  <div id="loginModal" class="modal" aria-hidden="true">
+    <div class="modal__backdrop" data-close="1"></div>
+
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <div class="modal__head">
+        <h3 id="loginTitle">登入（示範）</h3>
+        <button class="modal__close" type="button" data-close="1">×</button>
+      </div>
+
+      <div class="modal__body">
+        <label class="field">
+          <span class="field__label">顯示名稱</span>
+          <input id="loginName" class="input" type="text" placeholder="例如：YJC" />
+        </label>
+      </div>
+
+      <div class="modal__foot">
+        <button id="btnDoLogin" class="btn" type="button">登入</button>
+        <button class="btn btn--ghost" type="button" data-close="1">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
   <script src="js/common.js?v=20260109a"></script>
   <script src="js/booking.js?v=20260109a"></script>
 </body>

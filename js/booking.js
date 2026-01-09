@@ -15,20 +15,14 @@
     if (el) el.textContent = msg || "";
   }
 
-  function setHintAutoClear(msg, ms = 1200) {
+  function setHintAutoClear(msg, ms = 1500) {
     setHint(msg);
     if (!msg) return;
-    clearTimeout(setHintAutoClear._t);
-    setHintAutoClear._t = setTimeout(() => setHint(""), ms);
+    window.clearTimeout(setHintAutoClear._t);
+    setHintAutoClear._t = window.setTimeout(() => setHint(""), ms);
   }
 
-  function fmtHHMM(isoStr) {
-    if (!isoStr) return "";
-    const t = isoStr.split("T")[1] || "";
-    return t.slice(0, 5);
-  }
-
-  // ⚠️ common.js 會自動加 /api，所以這裡不要再寫 /api/xxx
+  // ----- API wrappers -----
   async function getAvailability(courtId, dateStr) {
     const qs = new URLSearchParams({
       court_id: String(courtId),
@@ -38,10 +32,14 @@
   }
 
   async function createBooking(payload) {
-    return window.api(`/bookings`, {
-      method: "POST",
-      body: payload,
-    });
+    return window.api(`/bookings`, { method: "POST", body: payload });
+  }
+
+  // ----- render helpers -----
+  function fmtHHMM(isoStr) {
+    if (!isoStr) return "";
+    const t = isoStr.split("T")[1] || "";
+    return t.slice(0, 5);
   }
 
   function buildCell({ courtLabel, slot, isAvailable, onBook }) {
@@ -56,11 +54,13 @@
 
     card.innerHTML = `
       <div class="slot__top">
-        <div class="slot__court">Court ${courtLabel}</div>
+        <div>
+          <div class="slot__court">Court ${courtLabel}</div>
+          <div class="slot__meta">
+            <span class="${stateChipClass}">${stateText}</span>
+          </div>
+        </div>
         <div class="slot__time">${start} - ${end}</div>
-      </div>
-      <div class="slot__meta">
-        <span class="${stateChipClass}">${stateText}</span>
       </div>
       <div class="slot__actions"></div>
     `;
@@ -80,12 +80,6 @@
   async function renderIndexGrid(dateStr) {
     const grid = $("grid");
     if (!grid) return;
-
-    if (!dateStr) {
-      setHint("請先選擇日期");
-      grid.innerHTML = "";
-      return;
-    }
 
     setHint("載入中...");
     grid.innerHTML = "";
@@ -137,14 +131,11 @@
               } catch (e) {
                 console.error(e);
                 let msg = e?.message || "預約失敗";
-
-                // 常見重複預約提示（依你的 DB unique index）
                 if (/duplicate|uq_court_start/i.test(msg)) {
                   msg = "此時段已被預約，請換其他時段";
                 }
-
-                alert(msg);
                 setHint("預約失敗：" + msg);
+                alert(msg);
               }
             },
           });
@@ -153,13 +144,14 @@
         }
       }
 
-      setHintAutoClear("載入完成");
+      setHint("載入完成");
     } catch (e) {
       console.error(e);
-      setHint("載入失敗：" + (e?.message || e));
+      setHint("載入失敗：" + (e?.message || "未知錯誤"));
     }
   }
 
+  // ----- init -----
   document.addEventListener("DOMContentLoaded", async () => {
     const datePick = $("datePick");
     if (datePick) {
@@ -168,11 +160,7 @@
       renderIndexGrid(datePick.value);
     }
 
-    // health check（不彈窗）
-    try {
-      await window.api("/health");
-    } catch (e) {
-      console.warn("API health failed:", e?.message || e);
-    }
+    // health check (silent)
+    try { await window.api("/health"); } catch {}
   });
 })();
