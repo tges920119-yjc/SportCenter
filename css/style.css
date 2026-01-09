@@ -369,3 +369,39 @@ main.wrap{
   .account{ min-width: auto; }
   #grid{ grid-template-columns: 1fr; }
 }
+
+/* ===== Hotfix: ensure booking grid is visible ===== */
+#grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  min-height: 120px !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.slot {
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+}
+
+.slot__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.slot__court { font-weight: 700; }
+.slot__time { opacity: 0.85; }
+
+.slot__actions { margin-top: 10px; }
+
+/* chip basic fallback (如果你原本已有，這些也不會壞) */
+.chip { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+.chip--free { border: 1px solid rgba(0, 200, 120, 0.6); }
+.chip--taken { border: 1px solid rgba(255, 80, 80, 0.6); }
