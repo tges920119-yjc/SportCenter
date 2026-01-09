@@ -7,6 +7,31 @@
   <link rel="stylesheet" href="./css/style.css" />
 </head>
 
+<!-- ===== Login Modal ===== -->
+<div id="loginModal" class="modal" aria-hidden="true">
+  <div class="modal__backdrop" data-close="1"></div>
+
+  <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="modal__head">
+      <h3 id="loginTitle">登入（示範）</h3>
+      <button class="modal__close" type="button" data-close="1">×</button>
+    </div>
+
+    <div class="modal__body">
+      <label class="field">
+        <span class="field__label">顯示名稱</span>
+        <input id="loginName" class="input" type="text" placeholder="例如：Jason" />
+      </label>
+    </div>
+
+    <div class="modal__foot">
+      <button id="btnDoLogin" class="btn" type="button">登入</button>
+      <button class="btn btn--ghost" type="button" data-close="1">取消</button>
+    </div>
+  </div>
+</div>
+
+
 <body>
   <!-- Header：給 common.js 使用（登入/登出/顯示名稱） -->
   <header class="topbar">
