@@ -124,9 +124,13 @@
             onBook: async () => {
               try {
                 setHint("預約中...");
+                aconst d = (slot.start_at || "").split("T")[0];          // YYYY-MM-DD
+                const t = ((slot.start_at || "").split("T")[1] || "").slice(0, 5); // HH:MM
+
                 await createBooking({
                   court_id: g.court_id,
-                  start_at: slot.start_at,
+                  date: d,
+                  start_time: t,
                 });
                 setHint("預約成功，重新載入...");
                 await renderIndexGrid(dateStr);
