@@ -1,6 +1,5 @@
 // js/booking.js
 (() => {
-  // ---------- helpers ----------
   const $ = (id) => document.getElementById(id);
 
   function todayStr() {
@@ -13,27 +12,23 @@
 
   function setHint(msg) {
     const el = $("hintArea");
-    if (!el) return;
-    el.textContent = msg || "";
+    if (el) el.textContent = msg || "";
   }
 
-  // 成功訊息自動消失（錯誤就保留）
-  function setHintAutoClear(msg, ms = 2000) {
+  function setHintAutoClear(msg, ms = 1200) {
     setHint(msg);
     if (!msg) return;
-    window.clearTimeout(setHintAutoClear._t);
-    setHintAutoClear._t = window.setTimeout(() => setHint(""), ms);
+    clearTimeout(setHintAutoClear._t);
+    setHintAutoClear._t = setTimeout(() => setHint(""), ms);
   }
 
   function fmtHHMM(isoStr) {
-    // "2026-01-08T08:00:00" -> "08:00"
     if (!isoStr) return "";
     const t = isoStr.split("T")[1] || "";
     return t.slice(0, 5);
   }
 
-  // ---------- API wrappers (common.js 提供 window.api) ----------
-  // ⚠️ 注意：common.js 已經會補 /api，所以這裡不要再寫 /api/xxx
+  // ⚠️ common.js 會自動加 /api，所以這裡不要再寫 /api/xxx
   async function getAvailability(courtId, dateStr) {
     const qs = new URLSearchParams({
       court_id: String(courtId),
@@ -49,7 +44,6 @@
     });
   }
 
-  // ---------- Render grid ----------
   function buildCell({ courtLabel, slot, isAvailable, onBook }) {
     const card = document.createElement("div");
     card.className = "slot";
@@ -65,11 +59,9 @@
         <div class="slot__court">Court ${courtLabel}</div>
         <div class="slot__time">${start} - ${end}</div>
       </div>
-
       <div class="slot__meta">
         <span class="${stateChipClass}">${stateText}</span>
       </div>
-
       <div class="slot__actions"></div>
     `;
 
@@ -126,30 +118,28 @@
               try {
                 setHint("預約中...");
 
-                // 後端需要：date + start_time
                 const startAt = slot.start_at || "";
-                const d = startAt.split("T")[0] || "";
-                const t = (startAt.split("T")[1] || "").slice(0, 5);
+                const date = startAt.split("T")[0] || "";
+                const start_time = (startAt.split("T")[1] || "").slice(0, 5);
 
-                if (!d || !t) {
+                if (!date || !start_time) {
                   throw new Error("時間格式不正確，請重新整理頁面");
                 }
 
                 await createBooking({
                   court_id: g.court_id,
-                  date: d,
-                  start_time: t,
+                  date,
+                  start_time,
                 });
 
-                // 成功提示自動消失
                 setHintAutoClear("預約成功");
                 await renderIndexGrid(dateStr);
               } catch (e) {
                 console.error(e);
-
-                // 讓錯誤訊息更人類一點
                 let msg = e?.message || "預約失敗";
-                if (msg.includes("uq_court_start") || msg.includes("duplicate") || msg.includes("Duplicate")) {
+
+                // 常見重複預約提示（依你的 DB unique index）
+                if (/duplicate|uq_court_start/i.test(msg)) {
                   msg = "此時段已被預約，請換其他時段";
                 }
 
@@ -163,30 +153,24 @@
         }
       }
 
-      setHintAutoClear("載入完成", 1200);
+      setHintAutoClear("載入完成");
     } catch (e) {
       console.error(e);
       setHint("載入失敗：" + (e?.message || e));
     }
   }
 
-  // ---------- init ----------
   document.addEventListener("DOMContentLoaded", async () => {
     const datePick = $("datePick");
     if (datePick) {
-      // 預設給今天，避免出現空畫面
       if (!datePick.value) datePick.value = todayStr();
-
-      datePick.addEventListener("change", () => {
-        renderIndexGrid(datePick.value);
-      });
-
+      datePick.addEventListener("change", () => renderIndexGrid(datePick.value));
       renderIndexGrid(datePick.value);
     }
 
-    // 可選：健康檢查（不彈窗）
+    // health check（不彈窗）
     try {
-      await window.api("/health"); // ⚠️ 不要寫 /api/health
+      await window.api("/health");
     } catch (e) {
       console.warn("API health failed:", e?.message || e);
     }

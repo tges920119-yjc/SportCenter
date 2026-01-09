@@ -27,7 +27,6 @@
       throw new Error(msg);
     }
 
-    // 有些 API 可能回空內容，這裡保底
     try {
       return await res.json();
     } catch {
@@ -81,7 +80,7 @@
       if (btnLogout) btnLogout.hidden = false;
     } else {
       if (badge) badge.hidden = true;
-      if (name) name.textContent = ""; // 不登入就不要顯示 User 字樣
+      if (name) name.textContent = "";
       if (btnLogin) btnLogin.hidden = false;
       if (btnLogout) btnLogout.hidden = true;
     }
@@ -95,7 +94,6 @@
     if (btnLogin) btnLogin.addEventListener("click", () => openModal("#loginModal"));
     if (btnLogout) btnLogout.addEventListener("click", () => clearUser());
 
-    // 關閉 modal
     if (modal) {
       modal.addEventListener("click", (e) => {
         const t = e.target;
@@ -117,13 +115,9 @@
     }
   }
 
-  // 對外提供（booking.js / my.js 會用到）
   window.api = api;
-  window.auth = {
-    getUser: () => state.user,
-  };
+  window.auth = { getUser: () => state.user };
 
-  // init
   state.user = getUser();
   renderAccount();
   bindLoginUI();
