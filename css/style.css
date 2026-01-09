@@ -405,3 +405,29 @@ main.wrap{
 .chip { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
 .chip--free { border: 1px solid rgba(0, 200, 120, 0.6); }
 .chip--taken { border: 1px solid rgba(255, 80, 80, 0.6); }
+
+/* ===== booking grid 強制顯示修正 ===== */
+
+.container {
+  min-height: 100vh;        /* 🔴 沒高度 grid 會被吃掉 */
+}
+
+.panel {
+  min-height: 360px;        /* 🔴 確保有撐開 */
+  overflow: visible;       /* 🔴 不要 hidden */
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* 保底 slot 卡片 */
+.slot {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px;
+  min-height: 120px;
+}
