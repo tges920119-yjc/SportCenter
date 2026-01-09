@@ -124,24 +124,31 @@
             onBook: async () => {
               try {
                 setHint("預約中...");
-                aconst d = (slot.start_at || "").split("T")[0];          // YYYY-MM-DD
-                const t = ((slot.start_at || "").split("T")[1] || "").slice(0, 5); // HH:MM
+
+                const startAt = slot.start_at || "";
+                const d = startAt.split("T")[0] || "";                 // YYYY-MM-DD
+                const t = (startAt.split("T")[1] || "").slice(0, 5);   // HH:MM
+
+                if (!d || !t) {
+                  throw new Error("時間格式不正確，請重新整理後再試一次");
+                }
 
                 await createBooking({
                   court_id: g.court_id,
                   date: d,
                   start_time: t,
                 });
+
                 setHint("預約成功，重新載入...");
                 await renderIndexGrid(dateStr);
+                setHint("載入完成");
               } catch (e) {
+                console.error(e);
                 alert(e.message);
                 setHint("預約失敗：" + e.message);
               }
-            },
-          });
-          grid.appendChild(cell);
-        }
+            }
+
       }
 
       setHint("載入完成");
