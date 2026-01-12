@@ -6,17 +6,6 @@
   <title>SportCenter - 預約</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" href="LOGO.png">
-
-  <!-- ✅ 強制 LOGO 縮小（不依賴你原本 CSS 是否命中） -->
-  <style>
-    .brand__logo{
-      width: min(220px, 40vw) !important;
-      height: auto !important;
-      max-height: 88px !important;
-      object-fit: contain !important;
-      display:block;
-    }
-  </style>
 </head>
 
 <body>
@@ -52,7 +41,6 @@
       <div class="grid grid--2">
         <div class="form__group">
           <label class="form__label">日期</label>
-          <!-- ✅ booking.js / common.js 都會強制用 YYYY-MM-DD -->
           <input id="bookingDate" type="date" class="input" />
         </div>
 
@@ -86,12 +74,10 @@
     </section>
   </main>
 
-  <!-- ✅ Login/Register Modal（不再用 inline Auth script） -->
+  <!-- Login/Register Modal -->
   <div id="loginModal" class="modal" aria-hidden="true">
-    <!-- 點遮罩才關 -->
     <div class="modal__backdrop" data-close="1"></div>
 
-    <!-- 面板點擊不會關（JS 會 stopPropagation） -->
     <div class="modal__panel" role="dialog" aria-modal="true">
       <div class="modal__header">
         <h3 class="h2" id="authTitle">登入</h3>
@@ -106,7 +92,6 @@
 
         <div class="form__group">
           <label class="form__label">密碼</label>
-          <!-- ✅ booking.js 若抓 loginPass，這裡就給 loginPass -->
           <input id="loginPass" type="password" class="input" placeholder="輸入密碼" autocomplete="current-password" />
         </div>
 
@@ -129,7 +114,7 @@
     </div>
   </div>
 
-  <!-- ✅ 正確順序：先 common 再 booking -->
+  <!-- ✅ 正確順序：common.js 先、booking.js 後 -->
   <script src="js/common.js"></script>
   <script src="js/booking.js"></script>
 </body>

@@ -301,20 +301,33 @@ img[src*="LOGO" i] {
   margin: 18px auto;
 }
 
-/* ===== Header spacing fix (top edge too big) ===== */
+/* ===== Header spacing fix ===== */
 .header { padding: 10px 0 !important; }
 .header__inner { padding-top: 8px !important; padding-bottom: 8px !important; }
 .brand { gap: 10px !important; align-items: center !important; }
 .brand__logo { margin: 0 !important; max-height: 56px !important; }
+
+/* ===== Force ALL LOGO.png images to be small ===== */
+img[src$="LOGO.png" i],
+img[src*="/LOGO.png" i],
+img[src*="LOGO.png" i],
+img[alt*="logo" i]{
+  width: min(220px, 40vw) !important;
+  height: auto !important;
+  max-height: 56px !important;
+  object-fit: contain !important;
+  display: block !important;
+}
 
 /* ===== Modal layering + colors fix ===== */
 .modal {
   position: fixed;
   inset: 0;
   z-index: 9999;
+  display: none;
 }
+.modal.is-open { display: block; }
 
-/* 讓 backdrop 在下面 */
 .modal__backdrop {
   position: absolute;
   inset: 0;
@@ -322,7 +335,6 @@ img[src*="LOGO" i] {
   z-index: 0;
 }
 
-/* 讓 panel 在上面、可點擊 */
 .modal__panel {
   position: relative;
   z-index: 1;
@@ -335,7 +347,6 @@ img[src*="LOGO" i] {
   box-shadow: 0 16px 50px rgba(0,0,0,.35);
 }
 
-/* Modal 內的文字顏色統一（避免淡掉） */
 .modal__panel .muted { color: #666 !important; }
 .modal__panel .form__label { color: #222 !important; }
 .modal__panel .input {
@@ -344,7 +355,6 @@ img[src*="LOGO" i] {
   border: 1px solid #d6dbe3 !important;
 }
 
-/* 讓「切換到註冊」一定能點到 */
 #toggleAuthMode {
   position: relative;
   z-index: 2;
@@ -353,5 +363,4 @@ img[src*="LOGO" i] {
   text-decoration: underline;
 }
 
-/* 可選：讓 close 按鈕看起來正常 */
 .modal__header .btn { color: #111 !important; }
