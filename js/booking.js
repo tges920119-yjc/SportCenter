@@ -399,27 +399,35 @@
   function init() {
     // ✅ 日期預設今天（本地）
     if (DOM.dateInput) {
-      if (!DOM.dateInput.value) DOM.dateInput.value = todayLocalYYYYMMDD();
+      // 強制 type=date（避免被改成 text）
+      DOM.dateInput.setAttribute("type", "date");
+
+      // 強制使用 YYYY-MM-DD
+      const v = DOM.dateInput.value;
+      if (!v || v.includes("/")) {
+        DOM.dateInput.value = todayLocalYYYYMMDD();
+      }
+
       state.date = DOM.dateInput.value;
 
       DOM.dateInput.addEventListener("change", async () => {
         state.date = DOM.dateInput.value || todayLocalYYYYMMDD();
         await refreshAll();
       });
-    } else {
-      // 沒有日期 input 也別讓程式爆
-      state.date = todayLocalYYYYMMDD();
     }
 
     // Login modal：點背景關閉（可選）
     if (DOM.loginModal) {
       DOM.loginModal.addEventListener("click", (e) => {
+        // 只允許點到遮罩本體才關（避免點到內容也關）
         if (e.target === DOM.loginModal) closeModal();
       });
-      // Esc 關閉
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeModal();
-      });
+
+      // 防止點面板時事件冒泡到遮罩造成誤關
+      const panel = DOM.loginModal.querySelector(".panel, .modal__panel");
+      if (panel) {
+        panel.addEventListener("click", (e) => e.stopPropagation());
+      }
     }
 
     // Buttons

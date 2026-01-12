@@ -286,18 +286,17 @@ body.modal-open {
   cursor: not-allowed;
 }
 
-/* ===== Logo size fix ===== */
-.hero-logo,
-#heroLogo,
-.logo {
+/* ===== Force logo size (works even without class) ===== */
+img#logo,
+img#heroLogo,
+img.logo,
+img.hero-logo,
+img[alt*="logo" i],
+img[src*="LOGO" i] {
+  width: min(320px, 70vw) !important;
+  height: auto !important;
+  max-height: 320px !important;
+  object-fit: contain !important;
   display: block;
-  width: min(320px, 70vw); /* 最大 320px，手機最多 70vw */
-  height: auto;
-  margin: 24px auto;
-}
-
-/* 如果你是把 LOGO 放在中間當主視覺，建議再限制最大高度 */
-.hero-logo {
-  max-height: 320px;
-  object-fit: contain;
+  margin: 18px auto;
 }
