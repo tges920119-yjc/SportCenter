@@ -36,7 +36,7 @@
   <main class="container page">
     <section class="card">
       <h1 class="h1">立即預約</h1>
-      <p class="muted">GitHub Pages 版本使用 Token 登入；未登入無法預約。</p>
+      <p class="muted">未登入無法預約；可用 Token 登入（GitHub Pages 也適用）。</p>
 
       <div class="grid grid--2">
         <div class="form__group">
@@ -49,10 +49,7 @@
 
         <div class="form__group">
           <label class="form__label">球場</label>
-          <select id="courtSelect" class="select">
-            <option value="1">A 場</option>
-            <option value="2">B 場</option>
-          </select>
+          <select id="courtSelect" class="select"></select>
         </div>
 
         <div class="form__group">
@@ -98,7 +95,6 @@
         <div class="form__group" id="registerEmailWrap" style="display:none;">
           <label class="form__label">Email（可選）</label>
           <input id="registerEmail" type="email" class="input" placeholder="test@example.com" autocomplete="email" />
-          <div class="muted" style="margin-top:6px;">不填可註冊；有填需符合 email 格式。</div>
         </div>
 
         <div class="actions">
@@ -106,15 +102,10 @@
           <button id="btnDoRegister" class="btn" type="button" hidden>註冊</button>
           <a href="#" id="toggleAuthMode" class="link" style="margin-left:12px;">切換到註冊</a>
         </div>
-
-        <p class="muted" style="margin-top:10px;">
-          GitHub Pages 版本：登入後會把 token 存在瀏覽器 localStorage。
-        </p>
       </div>
     </div>
   </div>
 
-  <!-- ✅ 正確順序：common.js 先、booking.js 後 -->
   <script src="js/common.js"></script>
   <script src="js/booking.js"></script>
 </body>
