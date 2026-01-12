@@ -1,99 +1,160 @@
-// GitHub Pages version: uses Bearer token (window.Auth.token)
-// API Base is defined in index.html (Auth.request uses API_BASE)
+// booking.js (GitHub Pages) - read courts & booked slots from DB, create booking (login required)
 
-const Booking = {
-  hours: [8, 9, 10, 11],
+function pad2(n){ return String(n).padStart(2,"0"); }
+function ymd(d){
+  const yyyy=d.getFullYear();
+  const mm=pad2(d.getMonth()+1);
+  const dd=pad2(d.getDate());
+  return `${yyyy}-${mm}-${dd}`;
+}
 
-  init() {
-    this.elDate = document.getElementById("bookingDate");
-    this.elCourt = document.getElementById("courtSelect");
-    this.elTime = document.getElementById("timeSelect");
-    this.elNote = document.getElementById("note");
-    this.elBtnBook = document.getElementById("btnBook");
-    this.elMsg = document.getElementById("bookingMsg");
+let CURRENT_USER = null;
 
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    if (this.elDate) this.elDate.value = `${yyyy}-${mm}-${dd}`;
+async function loadUser() {
+  CURRENT_USER = await refreshMe();
+  const btnLogin = document.getElementById("btnLogin");
+  const btnLogout = document.getElementById("btnLogout");
+  if (CURRENT_USER) {
+    if (btnLogin) btnLogin.hidden = true;
+    if (btnLogout) btnLogout.hidden = false;
+  } else {
+    if (btnLogin) btnLogin.hidden = false;
+    if (btnLogout) btnLogout.hidden = true;
+  }
+  return CURRENT_USER;
+}
 
-    this.renderTimes();
+async function loadCourts() {
+  const r = await api("/api/courts", { method: "GET" });
+  return r.items || [];
+}
 
-    if (this.elBtnBook) this.elBtnBook.addEventListener("click", () => this.handleBook());
+async function loadBooked(dateStr, courtId) {
+  const r = await api(`/api/bookings?date=${encodeURIComponent(dateStr)}&court_id=${encodeURIComponent(courtId)}`, { method: "GET" });
+  return r.items || [];
+}
 
-    window.addEventListener("auth:changed", () => {
-      this.setMsg(window.Auth?.user ? `已登入：${window.Auth.user.display_name}` : "未登入");
-    });
+async function createBooking(courtId, startAt, endAt) {
+  return await api("/api/bookings", {
+    method: "POST",
+    body: JSON.stringify({ court_id: courtId, start_at: startAt, end_at: endAt })
+  });
+}
 
-    this.setMsg(window.Auth?.user ? `已登入：${window.Auth.user.display_name}` : "未登入");
-  },
+// 你目前的時段：08-12，每次 1 小時
+const HOURS = [8,9,10,11];
 
-  setMsg(text) {
-    if (this.elMsg) this.elMsg.textContent = text || "";
-  },
-
-  renderTimes() {
-    if (!this.elTime) return;
-    this.elTime.innerHTML = "";
-    for (const h of this.hours) {
-      const hh = String(h).padStart(2, "0");
-      const label = `${hh}:00`;
-      const opt = document.createElement("option");
-      opt.value = label;
-      opt.textContent = label;
-      this.elTime.appendChild(opt);
-    }
-  },
-
-  async handleBook() {
-    if (!window.Auth || !window.Auth.user || !window.Auth.token) {
-      alert("請先登入才能預約");
-      window.Auth?.openModal?.();
-      return;
-    }
-
-    const dateStr = (this.elDate?.value || "").trim();
-    const timeStr = (this.elTime?.value || "").trim(); // "08:00"
-    const courtId = Number(this.elCourt?.value || "0");
-
-    if (!dateStr || !timeStr || !courtId) {
-      alert("請選擇日期、時間與球場");
-      return;
-    }
-
-    const [hh, min] = timeStr.split(":").map((x) => Number(x));
-    const startAt = `${dateStr} ${String(hh).padStart(2, "0")}:${String(min).padStart(2, "0")}:00`;
-    const endH = hh + 1;
-    const endAt = `${dateStr} ${String(endH).padStart(2, "0")}:${String(min).padStart(2, "0")}:00`;
-
-    this.setMsg("送出預約中...");
-
-    try {
-      const res = await window.Auth.request("/api/bookings", {
-        method: "POST",
-        body: JSON.stringify({
-          court_id: courtId,
-          start_at: startAt,
-          end_at: endAt
-        })
-      });
-
-      alert("預約成功");
-      this.setMsg(`預約成功：${res.booking_no}`);
-    } catch (err) {
-      const msg = err?.message || "預約失敗";
-      if (msg.includes("Not logged in") || msg.includes("401")) {
-        alert("登入已失效，請重新登入");
-        window.Auth.logout();
-        window.Auth.openModal();
-        this.setMsg("未登入");
-        return;
-      }
-      alert(msg);
-      this.setMsg("預約失敗");
+function buildSlots(bookedRows) {
+  // 用 start_at 來標記已佔用
+  const used = new Set();
+  for (const b of bookedRows) {
+    const s = String(b.start_at); // 可能是 "2026-01-10 08:00:00" 或 ISO
+    // 統一抓出 HH:00
+    const m = s.match(/T(\d{2}):(\d{2})/);
+    if (m) used.add(`${m[1]}:${m[2]}`);
+    else {
+      const m2 = s.match(/ (\d{2}):(\d{2})/);
+      if (m2) used.add(`${m2[1]}:${m2[2]}`);
     }
   }
-};
+  return HOURS.map(h => {
+    const hh = pad2(h);
+    const key = `${hh}:00`;
+    return { time: key, available: !used.has(key) };
+  });
+}
 
-document.addEventListener("DOMContentLoaded", () => Booking.init());
+async function render() {
+  const dateEl = document.getElementById("bookingDate");
+  const courtEl = document.getElementById("courtSelect");
+  const gridEl = document.getElementById("slotsGrid");
+  const msgEl = document.getElementById("loadMsg");
+
+  try {
+    if (msgEl) msgEl.textContent = "讀取中...";
+    const dateStr = (dateEl?.value || "").trim();
+
+    const courtId = Number(courtEl?.value || "1");
+    const booked = await loadBooked(dateStr, courtId);
+    const slots = buildSlots(booked);
+
+    // 畫面渲染按鈕
+    if (gridEl) {
+      gridEl.innerHTML = "";
+      for (const s of slots) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "slot-btn " + (s.available ? "ok" : "full");
+        btn.textContent = s.available ? `可預約 ${s.time}` : `已被租走 ${s.time}`;
+        btn.disabled = !s.available;
+
+        btn.addEventListener("click", async () => {
+          if (!CURRENT_USER) {
+            alert("請先登入才能預約");
+            return;
+          }
+          const startAt = `${dateStr} ${s.time}:00`;
+          const endH = Number(s.time.slice(0,2)) + 1;
+          const endAt = `${dateStr} ${pad2(endH)}:00:00`;
+          try {
+            const r = await createBooking(courtId, startAt, endAt);
+            alert("預約成功：" + r.booking_no);
+            await render(); // 重新刷新
+          } catch (e) {
+            if (e.status === 409) alert("該時段已被預約");
+            else alert(e.message || "預約失敗");
+            await render();
+          }
+        });
+
+        gridEl.appendChild(btn);
+      }
+    }
+    if (msgEl) msgEl.textContent = "";
+  } catch (e) {
+    if (msgEl) msgEl.textContent = "載入失敗：" + (e.message || "Not Found");
+  }
+}
+
+async function init() {
+  // 預設日期今天
+  const dateEl = document.getElementById("bookingDate");
+  if (dateEl && !dateEl.value) dateEl.value = ymd(new Date());
+
+  // 先讀使用者狀態
+  await loadUser();
+
+  // 讀 courts 填下拉
+  const courtEl = document.getElementById("courtSelect");
+  try {
+    const courts = await loadCourts();
+    if (courtEl) {
+      courtEl.innerHTML = "";
+      for (const c of courts) {
+        const opt = document.createElement("option");
+        opt.value = String(c.id);
+        opt.textContent = c.name;
+        courtEl.appendChild(opt);
+      }
+    }
+  } catch (e) {
+    // courts 失敗會影響顯示
+  }
+
+  // 監聽日期/球場變更
+  document.getElementById("bookingDate")?.addEventListener("change", render);
+  document.getElementById("courtSelect")?.addEventListener("change", render);
+
+  // 登出
+  document.getElementById("btnLogout")?.addEventListener("click", () => {
+    setToken("");
+    setUser(null);
+    CURRENT_USER = null;
+    alert("已登出");
+    render();
+  });
+
+  await render();
+}
+
+document.addEventListener("DOMContentLoaded", init);
