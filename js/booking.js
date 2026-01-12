@@ -126,7 +126,8 @@ async function init() {
   await loadUser();
 
   // courts 下拉
-  const courtEl = document.getElementById("courtSelect");
+  const dateEl = document.getElementById("datePick"); // 你實際的 id 可能不同
+  if (dateEl && !dateEl.value) dateEl.value = todayLocalYYYYMMDD();
   try {
     const courts = await loadCourts();
     if (courtEl) {
