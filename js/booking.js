@@ -1,14 +1,12 @@
-// booking.js (GitHub Pages) - read courts & booked slots from DB, create booking (login required)
+// booking.js - Phase 1 (test): fixed slots 08:00-12:00, 1 hour per slot
+// requires js/common.js: api(), refreshMe(), setToken(), setUser()
 
 function pad2(n){ return String(n).padStart(2,"0"); }
-function ymd(d){
-  const yyyy=d.getFullYear();
-  const mm=pad2(d.getMonth()+1);
-  const dd=pad2(d.getDate());
-  return `${yyyy}-${mm}-${dd}`;
-}
 
 let CURRENT_USER = null;
+
+const HOURS = [8, 9, 10, 11]; // 08-12 (start hours)
+const SLOT_MINUTES = 60;
 
 async function loadUser() {
   CURRENT_USER = await refreshMe();
@@ -41,44 +39,50 @@ async function createBooking(courtId, startAt, endAt) {
   });
 }
 
-// 你目前的時段：08-12，每次 1 小時
-const HOURS = [8,9,10,11];
-
-function buildSlots(bookedRows) {
-  // 用 start_at 來標記已佔用
+function normalizeBookedSet(bookedRows){
+  // 用 start_at -> "HH:MM" 建 set
   const used = new Set();
   for (const b of bookedRows) {
-    const s = String(b.start_at); // 可能是 "2026-01-10 08:00:00" 或 ISO
-    // 統一抓出 HH:00
-    const m = s.match(/T(\d{2}):(\d{2})/);
-    if (m) used.add(`${m[1]}:${m[2]}`);
-    else {
-      const m2 = s.match(/ (\d{2}):(\d{2})/);
-      if (m2) used.add(`${m2[1]}:${m2[2]}`);
-    }
+    const s = String(b.start_at);
+    // ISO: 2026-01-10T08:00:00
+    let m = s.match(/T(\d{2}):(\d{2})/);
+    if (m) { used.add(`${m[1]}:${m[2]}`); continue; }
+    // SQL string: 2026-01-10 08:00:00
+    m = s.match(/ (\d{2}):(\d{2})/);
+    if (m) { used.add(`${m[1]}:${m[2]}`); continue; }
   }
+  return used;
+}
+
+function buildSlots(usedSet){
   return HOURS.map(h => {
     const hh = pad2(h);
     const key = `${hh}:00`;
-    return { time: key, available: !used.has(key) };
+    return { time: key, available: !usedSet.has(key) };
   });
+}
+
+function setMsg(txt){
+  const el = document.getElementById("loadMsg");
+  if (el) el.textContent = txt || "";
 }
 
 async function render() {
   const dateEl = document.getElementById("bookingDate");
   const courtEl = document.getElementById("courtSelect");
   const gridEl = document.getElementById("slotsGrid");
-  const msgEl = document.getElementById("loadMsg");
+
+  const dateStr = (dateEl?.value || "").trim();
+  const courtId = Number(courtEl?.value || "0");
+
+  if (!dateStr || !courtId) return;
 
   try {
-    if (msgEl) msgEl.textContent = "讀取中...";
-    const dateStr = (dateEl?.value || "").trim();
-
-    const courtId = Number(courtEl?.value || "1");
+    setMsg("讀取中...");
     const booked = await loadBooked(dateStr, courtId);
-    const slots = buildSlots(booked);
+    const used = normalizeBookedSet(booked);
+    const slots = buildSlots(used);
 
-    // 畫面渲染按鈕
     if (gridEl) {
       gridEl.innerHTML = "";
       for (const s of slots) {
@@ -96,13 +100,14 @@ async function render() {
           const startAt = `${dateStr} ${s.time}:00`;
           const endH = Number(s.time.slice(0,2)) + 1;
           const endAt = `${dateStr} ${pad2(endH)}:00:00`;
+
           try {
+            setMsg("送出預約中...");
             const r = await createBooking(courtId, startAt, endAt);
             alert("預約成功：" + r.booking_no);
-            await render(); // 重新刷新
+            await render();
           } catch (e) {
-            if (e.status === 409) alert("該時段已被預約");
-            else alert(e.message || "預約失敗");
+            alert(e.message || "預約失敗");
             await render();
           }
         });
@@ -110,21 +115,16 @@ async function render() {
         gridEl.appendChild(btn);
       }
     }
-    if (msgEl) msgEl.textContent = "";
+    setMsg("");
   } catch (e) {
-    if (msgEl) msgEl.textContent = "載入失敗：" + (e.message || "Not Found");
+    setMsg("載入失敗：" + (e.message || "Not Found"));
   }
 }
 
 async function init() {
-  // 預設日期今天
-  const dateEl = document.getElementById("bookingDate");
-  if (dateEl && !dateEl.value) dateEl.value = ymd(new Date());
-
-  // 先讀使用者狀態
   await loadUser();
 
-  // 讀 courts 填下拉
+  // courts 下拉
   const courtEl = document.getElementById("courtSelect");
   try {
     const courts = await loadCourts();
@@ -138,10 +138,10 @@ async function init() {
       }
     }
   } catch (e) {
-    // courts 失敗會影響顯示
+    setMsg("載入失敗：" + (e.message || "Not Found"));
   }
 
-  // 監聽日期/球場變更
+  // 綁定
   document.getElementById("bookingDate")?.addEventListener("change", render);
   document.getElementById("courtSelect")?.addEventListener("change", render);
 
