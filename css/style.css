@@ -227,76 +227,38 @@ body {
   background: rgba(80, 220, 170, 0.85);
 }
 
-/* ===== Modal (login) ===== */
+/* ===== Modal final fix ===== */
 .modal {
   position: fixed;
   inset: 0;
   display: none;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 24px;
-  background: rgba(0,0,0,.55);
-  z-index: 9999;           /* 重點：壓過 LOGO/其他元素 */
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.45); /* 不要太黑 */
+  z-index: 9999;
 }
 
 .modal.is-open {
   display: flex;
 }
 
+/* 登入框本體 */
 .modal .panel,
 .modal__panel {
   background: #fff;
   border-radius: 12px;
-  padding: 16px;
+  padding: 16px 18px;
   max-width: 360px;
-  width: calc(100% - 48px);
+  width: 100%;
+  box-shadow: 0 12px 40px rgba(0,0,0,.3);
 }
 
-.modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
+/* 讓背後畫面仍可辨識 */
+body.modal-open {
+  overflow: hidden;
 }
 
-.modal__dialog {
-  position: relative;
-  max-width: 420px;
-  margin: 12vh auto 0;
-  background: rgba(30, 40, 60, 0.95);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-}
-
-.modal__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.modal__close {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: transparent;
-  color: #fff;
-  cursor: pointer;
-}
-
-.modal__foot {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 14px;
-}
-
-/* 保險：避免 transform 造成 stacking context 問題 */
-.modal, .modal * {
-  transform: none !important;
-}
 
 /* booking slots grid */
 .slots-grid{

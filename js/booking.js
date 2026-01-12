@@ -73,12 +73,14 @@
     if (!DOM.loginModal) return;
     DOM.loginModal.classList.add("is-open");
     DOM.loginModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
   }
 
   function closeModal() {
     if (!DOM.loginModal) return;
     DOM.loginModal.classList.remove("is-open");
     DOM.loginModal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
   }
 
   function isLoggedIn() {
