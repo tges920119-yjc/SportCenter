@@ -2,6 +2,7 @@
 // requires js/common.js: api(), refreshMe(), setToken(), setUser()
 
 function pad2(n){ return String(n).padStart(2,"0"); }
+console.log("booking.js loaded OK", new Date().toISOString());
 
 let CURRENT_USER = null;
 
