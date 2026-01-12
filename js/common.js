@@ -67,27 +67,38 @@
 
   // ===== API wrapper =====
   window.api = async function api(path, opts = {}) {
-    const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
-    const token = window.getToken();
-    if (token) headers["Authorization"] = "Bearer " + token;
+  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  const token = window.getToken();
+  if (token) headers["Authorization"] = "Bearer " + token;
 
-    const base = window.API_BASE || "";
-    const url = base + path;
+  const base = window.API_BASE || "";
+  const url = base + path;
 
-    const res = await fetch(url, { ...opts, headers });
-    const ct = res.headers.get("content-type") || "";
-    const body = ct.includes("application/json") ? await res.json() : await res.text();
+  const res = await fetch(url, { ...opts, headers });
+  const ct = res.headers.get("content-type") || "";
+  const body = ct.includes("application/json") ? await res.json() : await res.text();
 
-    if (!res.ok) {
-      const msg = body?.detail || (typeof body === "string" ? body : "Request failed");
-      const err = new Error(msg);
-      err.status = res.status;
-      err.body = body;
-      throw err;
+  if (!res.ok) {
+    // ⭐ FastAPI 的 422 detail 是 array，要轉成可讀文字
+    let msg = "Request failed";
+    if (body?.detail) {
+      if (Array.isArray(body.detail)) {
+        msg = body.detail.map(d => `${d.loc?.join(".")}: ${d.msg}`).join("\n");
+      } else {
+        msg = body.detail;
+      }
+    } else if (typeof body === "string") {
+      msg = body;
     }
-    return body;
-  };
 
+    const err = new Error(msg);
+    err.status = res.status;
+    err.raw = body;
+    throw err;
+  }
+
+  return body;
+};
   // ===== refreshMe：只在 401/403 才清 token =====
   window.refreshMe = async function refreshMe() {
     const token = window.getToken();
