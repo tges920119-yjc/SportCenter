@@ -282,3 +282,29 @@ body {
 .modal, .modal * {
   transform: none !important;
 }
+
+/* booking slots grid */
+.slots-grid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.slot-btn{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9);
+  cursor: pointer;
+}
+
+.slot-btn.ok{
+  border-color: rgba(0,255,170,0.35);
+}
+
+.slot-btn.full{
+  border-color: rgba(255,80,80,0.35);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
