@@ -127,20 +127,29 @@
   }
 
   async function refreshAll() {
-    msgLoad("載入中…");
-    try {
-      // 更新登入狀態（不會拋錯中斷）
-      if (typeof window.refreshMe === "function") await window.refreshMe();
+  const dateYMD = elDate?.value || today();
+  msgLoad("載入中…");
 
-      // 這裡如果你要讀取後端 courts/bookings，可以再補，
-      // 目前先讓 UI 正常可操作、避免卡住。
-      renderSimpleSlots();
-      msgLoad("");
-    } catch (err) {
-      console.error(err);
-      msgLoad(err?.message || "載入失敗", true);
-    }
+  try {
+    // 更新登入狀態
+    if (typeof window.refreshMe === "function") await window.refreshMe();
+
+    // ✅ 真的打後端查當天預約
+    const bookings = await window.api(`${ENDPOINTS.BOOKINGS}?date=${encodeURIComponent(dateYMD)}`, { method: "GET" });
+
+    // 你可以先把它印出來確認有抓到資料
+    console.log("bookings@", dateYMD, bookings);
+
+    // TODO: 你原本若有 renderBookings(bookings) 就呼叫它
+    // 暫時先用原本的簡易 UI
+    renderSimpleSlots();
+
+    msgLoad("");
+  } catch (err) {
+    console.error(err);
+    msgLoad(err?.message || "載入失敗", true);
   }
+}
 
   async function doBook() {
     if (!ensureLogin()) return;

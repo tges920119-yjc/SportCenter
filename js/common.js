@@ -1,9 +1,19 @@
-/* js/common.js */
+/* js/common.js
+ * 職責：
+ * - 管理 token / user（localStorage）
+ * - 提供 window.api / getToken / setToken / setUser / refreshMe
+ * - 管理登入/註冊 modal（切換、開關、按鈕事件）
+ */
+
 (() => {
   "use strict";
 
-  // ===== Config =====
-  window.API_BASE = window.API_BASE || ""; // 空字串 = 同網域相對路徑（建議）
+  // =========================
+  // Config
+  // =========================
+  // ✅ 不要用 const API_BASE，避免重複宣告炸掉
+  // 留空表示同網域相對路徑（例如 https://booking.novrise.org/api/...）
+  window.API_BASE = window.API_BASE || "";
 
   const TOKEN_KEY = "sportcenter_token";
   const USER_KEY  = "sportcenter_user";
@@ -14,7 +24,9 @@
     REGISTER: "/api/auth/register",
   };
 
-  // ===== Date helper (local) =====
+  // =========================
+  // Date helper (local)
+  // =========================
   window.todayLocalYYYYMMDD = function todayLocalYYYYMMDD() {
     const d = new Date();
     const y = d.getFullYear();
@@ -23,10 +35,13 @@
     return `${y}-${m}-${day}`;
   };
 
-  // ===== Token helpers =====
+  // =========================
+  // Token helpers
+  // =========================
   window.getToken = function getToken() {
     try { return localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
   };
+
   window.setToken = function setToken(v) {
     try {
       if (!v) localStorage.removeItem(TOKEN_KEY);
@@ -34,11 +49,14 @@
     } catch {}
   };
 
-  // ===== User helpers =====
+  // =========================
+  // User helpers
+  // =========================
   function readUser() {
     try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); }
     catch { return null; }
   }
+
   function writeUser(me) {
     try {
       if (!me) localStorage.removeItem(USER_KEY);
@@ -50,6 +68,7 @@
     window.__ME__ = me || null;
     writeUser(window.__ME__);
 
+    // header UI
     const btnLogin = document.getElementById("btnLogin");
     const btnLogout = document.getElementById("btnLogout");
     const navUserName = document.getElementById("navUserName");
@@ -65,41 +84,63 @@
     }
   };
 
-  // ===== API wrapper =====
-  window.api = async function api(path, opts = {}) {
-  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
-  const token = window.getToken();
-  if (token) headers["Authorization"] = "Bearer " + token;
+  // =========================
+  // API wrapper (✅ human-friendly errors)
+  // =========================
+  function formatFastApiError(body, status) {
+    // body can be string / object / array
+    // FastAPI typical: { detail: [...] } or { detail: "..." }
+    try {
+      if (body && typeof body === "object" && "detail" in body) {
+        const d = body.detail;
 
-  const base = window.API_BASE || "";
-  const url = base + path;
+        if (Array.isArray(d)) {
+          // 422 validation error list
+          return d.map(x => {
+            const loc = Array.isArray(x.loc) ? x.loc.join(".") : "";
+            const msg = x.msg || "";
+            return loc ? `${loc}: ${msg}` : msg;
+          }).join("\n");
+        }
 
-  const res = await fetch(url, { ...opts, headers });
-  const ct = res.headers.get("content-type") || "";
-  const body = ct.includes("application/json") ? await res.json() : await res.text();
-
-  if (!res.ok) {
-    // ⭐ FastAPI 的 422 detail 是 array，要轉成可讀文字
-    let msg = "Request failed";
-    if (body?.detail) {
-      if (Array.isArray(body.detail)) {
-        msg = body.detail.map(d => `${d.loc?.join(".")}: ${d.msg}`).join("\n");
-      } else {
-        msg = body.detail;
+        if (typeof d === "string") return d;
+        return JSON.stringify(d);
       }
-    } else if (typeof body === "string") {
-      msg = body;
-    }
 
-    const err = new Error(msg);
-    err.status = res.status;
-    err.raw = body;
-    throw err;
+      if (typeof body === "string") return body;
+      if (body === null || body === undefined) return `HTTP ${status}`;
+      return JSON.stringify(body);
+    } catch {
+      return `HTTP ${status}`;
+    }
   }
 
-  return body;
-};
-  // ===== refreshMe：只在 401/403 才清 token =====
+  window.api = async function api(path, opts = {}) {
+    const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+    const token = window.getToken();
+    if (token) headers["Authorization"] = "Bearer " + token;
+
+    const base = window.API_BASE || "";
+    const url = base + path;
+
+    const res = await fetch(url, { ...opts, headers });
+    const ct = res.headers.get("content-type") || "";
+    const body = ct.includes("application/json") ? await res.json() : await res.text();
+
+    if (!res.ok) {
+      const msg = formatFastApiError(body, res.status);
+      const err = new Error(msg || `HTTP ${res.status}`);
+      err.status = res.status;
+      err.raw = body;
+      throw err;
+    }
+
+    return body;
+  };
+
+  // =========================
+  // refreshMe：只有 401/403 才清 token（避免暫時性錯誤把你登出）
+  // =========================
   window.refreshMe = async function refreshMe() {
     const token = window.getToken();
     if (!token) { window.setUser(null); return null; }
@@ -117,7 +158,9 @@
     }
   };
 
-  // ===== Modal Auth UI =====
+  // =========================
+  // Modal Auth UI
+  // =========================
   const $ = (id) => document.getElementById(id);
 
   const modal = () => $("loginModal");
@@ -131,6 +174,7 @@
     m.setAttribute("aria-hidden", "false");
     m.classList.add("is-open");
   }
+
   function closeModal() {
     const m = modal();
     if (!m) return;
@@ -162,12 +206,6 @@
     }
   }
 
-  function errText(err, fallback) {
-    if (!err) return fallback || "發生錯誤";
-    if (typeof err === "string") return err;
-    return err.message || fallback || "發生錯誤";
-  }
-
   async function doLogin() {
     const dn = ($("loginName")?.value || "").trim();
     const pw = ($("loginPass")?.value || "").trim();
@@ -195,7 +233,7 @@
 
     if (!dn || !pw) { alert("請輸入帳號與密碼"); return; }
 
-    // ✅ email 有填才送
+    // ✅ email 有填才送，避免 422
     const payload = { display_name: dn, password: pw };
     if (em) payload.email = em;
 
@@ -204,47 +242,32 @@
       body: JSON.stringify(payload)
     });
 
-    // 註冊成功直接登入
+    // 註冊成功後直接登入
     await doLogin();
   }
 
-  function bindModal() {
+  function bindModalClose() {
     const m = modal();
     if (!m) return;
 
-    // 只點 backdrop / close 才關
+    // 只點遮罩/close 按鈕關閉
     m.addEventListener("click", (e) => {
       const t = e.target;
       if (t && t.getAttribute && t.getAttribute("data-close") === "1") closeModal();
     });
 
-    // 面板 stopPropagation（避免點任何地方都關）
+    // 防止點面板時事件冒泡到遮罩造成誤關
     panel()?.addEventListener("click", (e) => e.stopPropagation());
 
-    // ESC
+    // ESC 關閉
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeModal();
     });
-
-    $("toggleAuthMode")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      setAuthMode(authMode === "login" ? "register" : "login");
-    });
-
-    $("btnDoLogin")?.addEventListener("click", async () => {
-      try { await doLogin(); }
-      catch (err) { alert(errText(err, "登入失敗")); }
-    });
-
-    $("btnDoRegister")?.addEventListener("click", async () => {
-      try { await doRegister(); }
-      catch (err) { alert(errText(err, "註冊失敗")); }
-    });
   }
 
-  function bindHeader() {
+  function bindHeaderButtons() {
     $("btnLogin")?.addEventListener("click", () => {
-      setAuthMode("login"); // ✅ 每次開都回到登入
+      setAuthMode("login"); // ✅ 每次打開都從登入開始
       openModal();
     });
 
@@ -256,12 +279,36 @@
     });
   }
 
+  function bindAuthButtons() {
+    $("toggleAuthMode")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      setAuthMode(authMode === "login" ? "register" : "login");
+    });
+
+    $("btnDoLogin")?.addEventListener("click", async () => {
+      try { await doLogin(); }
+      catch (err) { alert(err?.message || "登入失敗"); }
+    });
+
+    $("btnDoRegister")?.addEventListener("click", async () => {
+      try { await doRegister(); }
+      catch (err) { alert(err?.message || "註冊失敗"); }
+    });
+  }
+
+  // =========================
+  // Boot
+  // =========================
   document.addEventListener("DOMContentLoaded", async () => {
     window.setUser(readUser());
-    bindModal();
-    bindHeader();
+
+    bindModalClose();
+    bindHeaderButtons();
+    bindAuthButtons();
+
     setAuthMode("login");
     await window.refreshMe();
+
     console.log("common.js loaded OK", new Date().toISOString());
   });
 })();
