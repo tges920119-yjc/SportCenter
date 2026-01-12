@@ -83,6 +83,20 @@
     document.body.classList.remove("modal-open");
   }
 
+  function showLogin() {
+  const vLogin = document.getElementById("viewLogin");
+  const vReg = document.getElementById("viewRegister");
+  if (vLogin) vLogin.style.display = "";
+  if (vReg) vReg.style.display = "none";
+  }
+
+  function showRegister() {
+  const vLogin = document.getElementById("viewLogin");
+  const vReg = document.getElementById("viewRegister");
+  if (vLogin) vLogin.style.display = "none";
+  if (vReg) vReg.style.display = "";
+  }
+
   function isLoggedIn() {
     return !!(window.getToken && window.getToken());
   }
@@ -90,6 +104,7 @@
   function requireLoginOrPrompt() {
     if (isLoggedIn()) return true;
     setMsg("請先登入後再進行預約。", true);
+    showLogin();     // ✅ 強制顯示登入
     openModal();
     return false;
   }
@@ -179,27 +194,32 @@
   }
 
   async function doRegister() {
-    // 如果你 HTML 沒有註冊欄位，就會用 loginName/loginPass 當註冊資料
-    const name =
-      DOM.registerName?.value?.trim() ||
-      DOM.loginName?.value?.trim() ||
-      "";
-    const pass =
-      DOM.registerPass?.value ||
-      DOM.loginPass?.value ||
-      "";
+  const name =
+    DOM.registerName?.value?.trim() ||
+    DOM.loginName?.value?.trim() ||
+    "";
+  const pass =
+    DOM.registerPass?.value ||
+    DOM.loginPass?.value ||
+    "";
 
-    if (!name || !pass) { setMsg("註冊需要帳號與密碼", true); return; }
+  const emailRaw = DOM.registerEmail?.value?.trim() || DOM.loginEmail?.value?.trim() || "";
+  const payload = { display_name: name, password: pass };
+  if (emailRaw) payload.email = emailRaw; // ✅ 有填才送
 
-    setMsg("註冊中…");
-    try {
-      await apiPost(ENDPOINTS.REGISTER, { display_name: name, password: pass });
-      setMsg("註冊成功，請登入");
-    } catch (e) {
-      console.error(e);
-      setMsg("註冊失敗：" + (e?.message || "unknown error"), true);
-    }
+  if (!name || !pass) { setMsg("註冊需要帳號與密碼", true); return; }
+
+  setMsg("註冊中…");
+  try {
+    await apiPost(ENDPOINTS.REGISTER, payload);
+    setMsg("註冊成功，請登入");
+    // 註冊成功後，直接切回登入畫面（下面第2點會一起修）
+    showLogin();
+  } catch (e) {
+    console.error(e);
+    setMsg("註冊失敗：" + (e?.message || "unknown error"), true);
   }
+}
 
   async function doLogout() {
     // 有些後端有 /logout，有些沒有；我們不強制呼叫
