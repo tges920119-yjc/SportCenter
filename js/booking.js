@@ -1,166 +1,99 @@
-// js/booking.js
-(() => {
-  const $ = (id) => document.getElementById(id);
+// GitHub Pages version: uses Bearer token (window.Auth.token)
+// API Base is defined in index.html (Auth.request uses API_BASE)
 
-  function todayStr() {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  }
+const Booking = {
+  hours: [8, 9, 10, 11],
 
-  function setHint(msg) {
-    const el = $("hintArea");
-    if (el) el.textContent = msg || "";
-  }
+  init() {
+    this.elDate = document.getElementById("bookingDate");
+    this.elCourt = document.getElementById("courtSelect");
+    this.elTime = document.getElementById("timeSelect");
+    this.elNote = document.getElementById("note");
+    this.elBtnBook = document.getElementById("btnBook");
+    this.elMsg = document.getElementById("bookingMsg");
 
-  function setHintAutoClear(msg, ms = 1500) {
-    setHint(msg);
-    if (!msg) return;
-    window.clearTimeout(setHintAutoClear._t);
-    setHintAutoClear._t = window.setTimeout(() => setHint(""), ms);
-  }
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    if (this.elDate) this.elDate.value = `${yyyy}-${mm}-${dd}`;
 
-  // ----- API wrappers -----
-  async function getAvailability(courtId, dateStr) {
-    const qs = new URLSearchParams({
-      court_id: String(courtId),
-      date: dateStr,
+    this.renderTimes();
+
+    if (this.elBtnBook) this.elBtnBook.addEventListener("click", () => this.handleBook());
+
+    window.addEventListener("auth:changed", () => {
+      this.setMsg(window.Auth?.user ? `已登入：${window.Auth.user.display_name}` : "未登入");
     });
-    return window.api(`/availability?${qs.toString()}`);
-  }
 
-  async function createBooking(payload) {
-    return window.api(`/bookings`, { method: "POST", body: payload });
-  }
+    this.setMsg(window.Auth?.user ? `已登入：${window.Auth.user.display_name}` : "未登入");
+  },
 
-  // ----- render helpers -----
-  function fmtHHMM(isoStr) {
-    if (!isoStr) return "";
-    const t = isoStr.split("T")[1] || "";
-    return t.slice(0, 5);
-  }
+  setMsg(text) {
+    if (this.elMsg) this.elMsg.textContent = text || "";
+  },
 
-  function buildCell({ courtLabel, slot, isAvailable, onBook }) {
-    const card = document.createElement("div");
-    card.className = "slot";
+  renderTimes() {
+    if (!this.elTime) return;
+    this.elTime.innerHTML = "";
+    for (const h of this.hours) {
+      const hh = String(h).padStart(2, "0");
+      const label = `${hh}:00`;
+      const opt = document.createElement("option");
+      opt.value = label;
+      opt.textContent = label;
+      this.elTime.appendChild(opt);
+    }
+  },
 
-    const start = fmtHHMM(slot.start_at);
-    const end = fmtHHMM(slot.end_at);
-
-    const stateChipClass = isAvailable ? "chip chip--free" : "chip chip--taken";
-    const stateText = isAvailable ? "可預約" : "已被租走";
-
-    card.innerHTML = `
-      <div class="slot__top">
-        <div>
-          <div class="slot__court">Court ${courtLabel}</div>
-          <div class="slot__meta">
-            <span class="${stateChipClass}">${stateText}</span>
-          </div>
-        </div>
-        <div class="slot__time">${start} - ${end}</div>
-      </div>
-      <div class="slot__actions"></div>
-    `;
-
-    const actions = card.querySelector(".slot__actions");
-    if (isAvailable) {
-      const btn = document.createElement("button");
-      btn.className = "btn";
-      btn.textContent = "預約";
-      btn.addEventListener("click", onBook);
-      actions.appendChild(btn);
+  async handleBook() {
+    if (!window.Auth || !window.Auth.user || !window.Auth.token) {
+      alert("請先登入才能預約");
+      window.Auth?.openModal?.();
+      return;
     }
 
-    return card;
-  }
+    const dateStr = (this.elDate?.value || "").trim();
+    const timeStr = (this.elTime?.value || "").trim(); // "08:00"
+    const courtId = Number(this.elCourt?.value || "0");
 
-  async function renderIndexGrid(dateStr) {
-    const grid = $("grid");
-    if (!grid) return;
+    if (!dateStr || !timeStr || !courtId) {
+      alert("請選擇日期、時間與球場");
+      return;
+    }
 
-    setHint("載入中...");
-    grid.innerHTML = "";
+    const [hh, min] = timeStr.split(":").map((x) => Number(x));
+    const startAt = `${dateStr} ${String(hh).padStart(2, "0")}:${String(min).padStart(2, "0")}:00`;
+    const endH = hh + 1;
+    const endAt = `${dateStr} ${String(endH).padStart(2, "0")}:${String(min).padStart(2, "0")}:00`;
+
+    this.setMsg("送出預約中...");
 
     try {
-      const [a, b] = await Promise.all([
-        getAvailability(1, dateStr),
-        getAvailability(2, dateStr),
-      ]);
+      const res = await window.Auth.request("/api/bookings", {
+        method: "POST",
+        body: JSON.stringify({
+          court_id: courtId,
+          start_at: startAt,
+          end_at: endAt
+        })
+      });
 
-      if (!a?.ok || !b?.ok) {
-        setHint("availability 回傳格式不正確");
+      alert("預約成功");
+      this.setMsg(`預約成功：${res.booking_no}`);
+    } catch (err) {
+      const msg = err?.message || "預約失敗";
+      if (msg.includes("Not logged in") || msg.includes("401")) {
+        alert("登入已失效，請重新登入");
+        window.Auth.logout();
+        window.Auth.openModal();
+        this.setMsg("未登入");
         return;
       }
-
-      const groups = [
-        { label: "A", court_id: 1, slots: a.slots || [] },
-        { label: "B", court_id: 2, slots: b.slots || [] },
-      ];
-
-      for (const g of groups) {
-        for (const slot of g.slots) {
-          const isAvailable = Number(slot.is_available) === 1;
-
-          const cell = buildCell({
-            courtLabel: g.label,
-            slot,
-            isAvailable,
-            onBook: async () => {
-              try {
-                setHint("預約中...");
-
-                const startAt = slot.start_at || "";
-                const date = startAt.split("T")[0] || "";
-                const start_time = (startAt.split("T")[1] || "").slice(0, 5);
-
-                if (!date || !start_time) {
-                  throw new Error("時間格式不正確，請重新整理頁面");
-                }
-
-                await createBooking({
-                  court_id: g.court_id,
-                  date,
-                  start_time,
-                });
-
-                setHintAutoClear("預約成功");
-                await renderIndexGrid(dateStr);
-              } catch (e) {
-                console.error(e);
-                let msg = e?.message || "預約失敗";
-                if (/duplicate|uq_court_start/i.test(msg)) {
-                  msg = "此時段已被預約，請換其他時段";
-                }
-                setHint("預約失敗：" + msg);
-                alert(msg);
-              }
-            },
-          });
-
-          grid.appendChild(cell);
-        }
-      }
-
-      setHint("載入完成");
-    } catch (e) {
-      console.error(e);
-      setHint("載入失敗：" + (e?.message || "未知錯誤"));
+      alert(msg);
+      this.setMsg("預約失敗");
     }
   }
+};
 
-  // ----- init -----
-  document.addEventListener("DOMContentLoaded", async () => {
-    const datePick = $("datePick");
-    if (datePick) {
-      if (!datePick.value) datePick.value = todayStr();
-      datePick.addEventListener("change", () => renderIndexGrid(datePick.value));
-      renderIndexGrid(datePick.value);
-    }
-
-    // health check (silent)
-    try { await window.api("/health"); } catch {}
-  });
-})();
+document.addEventListener("DOMContentLoaded", () => Booking.init());

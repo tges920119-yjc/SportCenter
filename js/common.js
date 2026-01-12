@@ -1,113 +1,201 @@
-// js/common.js  (same-origin /api)
-(() => {
-  const state = { user: null };
+// ================================
+// Common Auth (Cookie Session)
+// ================================
 
-  const $ = (sel) => document.querySelector(sel);
+const Auth = {
+  user: null,
+  mode: "login", // "login" | "register"
 
-  async function api(path, options = {}) {
-    const url = `/api${path.startsWith("/") ? path : `/${path}`}`;
-
-    const res = await fetch(url, {
-      method: options.method || "GET",
+  async request(path, options = {}) {
+    const opts = {
+      ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(options.headers || {}),
+        ...(options.headers || {})
       },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+      // Cookie Session 一定要帶 credentials
+      credentials: "include"
+    };
+
+    const res = await fetch(path, opts);
+    // 嘗試解析 JSON；如果不是 JSON 就讀 text
+    const ct = res.headers.get("content-type") || "";
+    const body = ct.includes("application/json") ? await res.json() : await res.text();
 
     if (!res.ok) {
-      let msg = `API ${res.status}`;
-      try {
-        const data = await res.json();
-        if (data?.detail) msg = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
-        else if (data?.message) msg = data.message;
-      } catch {}
+      const msg = (body && body.detail) ? body.detail : (typeof body === "string" ? body : "Request failed");
       throw new Error(msg);
     }
-    return res.json();
-  }
+    return body;
+  },
 
-  // ===== Demo login =====
-  function getUser() {
-    try { return JSON.parse(localStorage.getItem("demo_user") || "null"); }
-    catch { return null; }
-  }
-  function setUser(u) {
-    state.user = u;
-    if (!u) localStorage.removeItem("demo_user");
-    else localStorage.setItem("demo_user", JSON.stringify(u));
-    renderAccount();
-  }
+  setMode(mode) {
+    this.mode = mode;
+    const btnLogin = document.getElementById("btnDoLogin");
+    const btnReg = document.getElementById("btnDoRegister");
+    const email = document.getElementById("registerEmail");
+    const toggle = document.getElementById("toggleAuthMode");
 
-  function openModal(sel) {
-    const el = $(sel);
-    if (!el) return;
-    el.classList.add("is-open");
-    el.setAttribute("aria-hidden", "false");
-  }
-  function closeModal(sel) {
-    const el = $(sel);
-    if (!el) return;
-    el.classList.remove("is-open");
-    el.setAttribute("aria-hidden", "true");
-  }
+    if (!btnLogin || !btnReg || !toggle) return;
 
-  function renderAccount() {
-    const badge = $("#userBadge");
-    const name = $("#userName");
-    const btnLogin = $("#btnLogin");
-    const btnLogout = $("#btnLogout");
+    if (mode === "login") {
+      btnLogin.hidden = false;
+      btnReg.hidden = true;
+      if (email) email.closest("div") ? (email.closest("div").hidden = true) : (email.hidden = true);
+      toggle.textContent = "切換到註冊";
+    } else {
+      btnLogin.hidden = true;
+      btnReg.hidden = false;
+      if (email) email.closest("div") ? (email.closest("div").hidden = false) : (email.hidden = false);
+      toggle.textContent = "切換到登入";
+    }
+  },
 
-    const u = state.user;
+  openModal() {
+    const modal = document.getElementById("loginModal");
+    if (!modal) return;
+    modal.setAttribute("aria-hidden", "false");
+    modal.classList.add("is-open");
+  },
 
-    if (u) {
-      if (badge) badge.hidden = false;
-      if (name) name.textContent = u.name || "User";
+  closeModal() {
+    const modal = document.getElementById("loginModal");
+    if (!modal) return;
+    modal.setAttribute("aria-hidden", "true");
+    modal.classList.remove("is-open");
+  },
+
+  setHeaderUI() {
+    const btnLogin = document.getElementById("btnLogin");
+    const btnLogout = document.getElementById("btnLogout");
+
+    // 你如果有顯示使用者名字的元素（例如 #navUserName）
+    const navUserName = document.getElementById("navUserName");
+
+    if (this.user) {
       if (btnLogin) btnLogin.hidden = true;
       if (btnLogout) btnLogout.hidden = false;
+      if (navUserName) navUserName.textContent = this.user.display_name;
     } else {
-      if (badge) badge.hidden = true;  // ✅ 未登入不要顯示 User
       if (btnLogin) btnLogin.hidden = false;
       if (btnLogout) btnLogout.hidden = true;
+      if (navUserName) navUserName.textContent = "";
     }
+  },
+
+  async refreshMe() {
+    try {
+      const me = await this.request("/api/auth/me", { method: "GET" });
+      this.user = me;
+    } catch (e) {
+      this.user = null;
+    }
+    this.setHeaderUI();
+    return this.user;
+  },
+
+  async login(display_name, password) {
+    const payload = { display_name, password };
+    await this.request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    await this.refreshMe();
+  },
+
+  async register(display_name, password, email) {
+    const payload = { display_name, password };
+    if (email) payload.email = email;
+
+    await this.request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    await this.refreshMe();
+  },
+
+  async logout() {
+    await this.request("/api/auth/logout", { method: "POST", body: "{}" });
+    this.user = null;
+    this.setHeaderUI();
   }
+};
 
-  function bindLoginUI() {
-    const btnLogin = $("#btnLogin");
-    const btnLogout = $("#btnLogout");
-    const modal = $("#loginModal");
+// ================================
+// Wire up DOM events
+// ================================
+document.addEventListener("DOMContentLoaded", async () => {
+  // 預設登入模式
+  Auth.setMode("login");
 
-    if (btnLogin) btnLogin.addEventListener("click", () => openModal("#loginModal"));
-    if (btnLogout) btnLogout.addEventListener("click", () => setUser(null));
+  // 初始化登入狀態（會用 cookie 去 /me）
+  await Auth.refreshMe();
 
-    if (modal) {
-      modal.addEventListener("click", (e) => {
-        const t = e.target;
-        if (t && t.dataset && t.dataset.close) closeModal("#loginModal");
-      });
+  // Header buttons
+  const btnLogin = document.getElementById("btnLogin");
+  const btnLogout = document.getElementById("btnLogout");
+
+  if (btnLogin) btnLogin.addEventListener("click", (e) => {
+    e.preventDefault();
+    Auth.openModal();
+  });
+
+  if (btnLogout) btnLogout.addEventListener("click", async (e) => {
+    e.preventDefault();
+    try {
+      await Auth.logout();
+      alert("已登出");
+    } catch (err) {
+      alert(err.message || "登出失敗");
     }
+  });
 
-    const btnDoLogin = $("#btnDoLogin");
-    if (btnDoLogin) {
-      btnDoLogin.addEventListener("click", () => {
-        const loginName = $("#loginName")?.value?.trim();
-        if (!loginName) {
-          alert("請輸入顯示名稱");
-          return;
-        }
-        setUser({ name: loginName });
-        closeModal("#loginModal");
-      });
+  // Modal actions
+  const btnDoLogin = document.getElementById("btnDoLogin");
+  const btnDoRegister = document.getElementById("btnDoRegister");
+  const toggleAuthMode = document.getElementById("toggleAuthMode");
+
+  const loginName = document.getElementById("loginName");
+  const loginPassword = document.getElementById("loginPassword");
+  const registerEmail = document.getElementById("registerEmail");
+
+  if (toggleAuthMode) toggleAuthMode.addEventListener("click", (e) => {
+    e.preventDefault();
+    Auth.setMode(Auth.mode === "login" ? "register" : "login");
+  });
+
+  if (btnDoLogin) btnDoLogin.addEventListener("click", async () => {
+    try {
+      const dn = (loginName?.value || "").trim();
+      const pw = (loginPassword?.value || "").trim();
+      if (!dn || !pw) return alert("請輸入帳號與密碼");
+
+      await Auth.login(dn, pw);
+      Auth.closeModal();
+      alert("登入成功");
+      // 觸發自訂事件，讓 booking.js 可以知道已登入
+      window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: Auth.user } }));
+    } catch (err) {
+      alert(err.message || "登入失敗");
     }
-  }
+  });
 
-  // expose
-  window.api = api;
-  window.auth = { getUser: () => state.user };
+  if (btnDoRegister) btnDoRegister.addEventListener("click", async () => {
+    try {
+      const dn = (loginName?.value || "").trim();
+      const pw = (loginPassword?.value || "").trim();
+      const em = (registerEmail?.value || "").trim();
+      if (!dn || !pw) return alert("請輸入帳號與密碼");
 
-  // init
-  state.user = getUser();
-  renderAccount();
-  bindLoginUI();
-})();
+      await Auth.register(dn, pw, em);
+      Auth.closeModal();
+      alert("註冊成功（已自動登入）");
+      window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: Auth.user } }));
+    } catch (err) {
+      alert(err.message || "註冊失敗");
+    }
+  });
+
+  // 讓其他 js 使用
+  window.Auth = Auth;
+});

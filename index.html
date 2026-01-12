@@ -3,89 +3,287 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Court Booking</title>
-
-  <link rel="stylesheet" href="css/style.css?v=20260109a" />
-  <!-- favicon 先不管 -->
+  <title>SportCenter - 預約</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 
 <body>
-  <!-- ===== Header ===== -->
-  <header class="site-header">
-    <div class="site-header__left">
+  <header class="header">
+    <div class="container header__inner">
       <div class="brand">
-        <span class="brand__title">Court Booking</span>
-      </div>
-
-      <nav class="site-nav">
-        <a class="site-nav__link" href="index.html">預約</a>
-        <a class="site-nav__link" href="venues.html">場地資訊</a>
-        <a class="site-nav__link" href="my.html">我的預約</a>
-      </nav>
-    </div>
-
-    <div class="site-header__right">
-      <span id="userBadge" class="user-badge" hidden>
-        <span class="user-dot"></span>
-        <span id="userName">User</span>
-      </span>
-
-      <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
-      <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
-    </div>
-  </header>
-
-  <!-- ===== Main ===== -->
-  <main class="container">
-    <section class="panel">
-      <div class="panel__head">
-        <h2>預約</h2>
-
-        <div class="panel__actions">
-          <label class="field field--inline">
-            <span class="field__label">日期</span>
-            <input id="datePick" class="input" type="date" />
-          </label>
+        <img src="LOGO.PNG" alt="logo" class="brand__logo" />
+        <div class="brand__text">
+          <div class="brand__title">SportCenter</div>
+          <div class="brand__subtitle">球場預約系統</div>
         </div>
       </div>
 
-      <p id="hintArea" class="hint"></p>
+      <nav class="nav">
+        <a class="nav__link is-active" href="index.html">預約</a>
+        <a class="nav__link" href="venues.html">場館</a>
+        <a class="nav__link" href="my.html">我的預約</a>
+      </nav>
 
-      <div id="grid" class="grid"></div>
+      <div class="nav__actions">
+        <span id="navUserName" class="nav__user"></span>
+        <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
+        <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
+      </div>
+    </div>
+  </header>
 
-      <div class="legend" id="mineLegend" hidden>
-        <span class="chip chip--free">可預約</span>
-        <span class="chip chip--taken">已被租走</span>
+  <main class="container page">
+    <section class="card">
+      <h1 class="h1">立即預約</h1>
+      <p class="muted">GitHub Pages 版本使用 Token 登入；未登入無法預約。</p>
+
+      <div class="grid grid--2">
+        <div class="form__group">
+          <label class="form__label">日期</label>
+          <input id="bookingDate" type="date" class="input" />
+        </div>
+
+        <div class="form__group">
+          <label class="form__label">球場</label>
+          <select id="courtSelect" class="select">
+            <option value="1">A 場</option>
+            <option value="2">B 場</option>
+          </select>
+        </div>
+
+        <div class="form__group">
+          <label class="form__label">開始時間</label>
+          <select id="timeSelect" class="select"></select>
+          <div class="muted" style="margin-top:6px;">每次預約 1 小時。</div>
+        </div>
+
+        <div class="form__group">
+          <label class="form__label">備註</label>
+          <input id="note" type="text" class="input" placeholder="（可選）" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btnBook" class="btn" type="button">確認預約</button>
+        <span id="bookingMsg" class="muted" style="margin-left:12px;"></span>
       </div>
     </section>
   </main>
 
-  <!-- ===== Login Modal ===== -->
+  <!-- Login Modal -->
   <div id="loginModal" class="modal" aria-hidden="true">
     <div class="modal__backdrop" data-close="1"></div>
-
-    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-      <div class="modal__head">
-        <h3 id="loginTitle">登入（示範）</h3>
-        <button class="modal__close" type="button" data-close="1">×</button>
+    <div class="modal__panel" role="dialog" aria-modal="true">
+      <div class="modal__header">
+        <h3 class="h2">登入 / 註冊</h3>
+        <button class="btn btn--ghost" type="button" data-close="1">✕</button>
       </div>
 
       <div class="modal__body">
-        <label class="field">
-          <span class="field__label">顯示名稱</span>
-          <input id="loginName" class="input" type="text" placeholder="例如：YJC" />
-        </label>
-      </div>
+        <div class="form__group">
+          <label class="form__label">帳號（display_name）</label>
+          <input id="loginName" class="input" placeholder="Reminder: 使用 display_name" autocomplete="username" />
+        </div>
 
-      <div class="modal__foot">
-        <button id="btnDoLogin" class="btn" type="button">登入</button>
-        <button class="btn btn--ghost" type="button" data-close="1">取消</button>
+        <div class="form__group">
+          <label class="form__label">密碼</label>
+          <input id="loginPassword" type="password" class="input" placeholder="輸入密碼" autocomplete="current-password" />
+        </div>
+
+        <div class="form__group" id="registerEmailWrap" style="display:none;">
+          <label class="form__label">Email（可選）</label>
+          <input id="registerEmail" type="email" class="input" placeholder="test@example.com" autocomplete="email" />
+        </div>
+
+        <div class="actions">
+          <button id="btnDoLogin" class="btn" type="button">登入</button>
+          <button id="btnDoRegister" class="btn" type="button" hidden>註冊</button>
+          <a href="#" id="toggleAuthMode" class="link" style="margin-left:12px;">切換到註冊</a>
+        </div>
+
+        <p class="muted" style="margin-top:10px;">
+          GitHub Pages 版本：登入後會把 token 存在瀏覽器 localStorage。
+        </p>
       </div>
     </div>
   </div>
 
-  <!-- JS -->
-  <script src="js/common.js?v=20260109a"></script>
-  <script src="js/booking.js?v=20260109a"></script>
+  <!-- Auth + UI (inline, no need common.js) -->
+  <script>
+    // ====== CONFIG ======
+    const API_BASE = "https://booking.novrise.org"; // 你後端外網 domain（不是 127.0.0.1）
+    const TOKEN_KEY = "sportcenter_token";
+    const USER_KEY = "sportcenter_user";
+
+    const Auth = {
+      mode: "login",
+      token: localStorage.getItem(TOKEN_KEY) || "",
+      user: (() => {
+        try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch { return null; }
+      })(),
+
+      openModal() {
+        const m = document.getElementById("loginModal");
+        if (!m) return;
+        m.setAttribute("aria-hidden","false");
+        m.classList.add("is-open");
+      },
+      closeModal() {
+        const m = document.getElementById("loginModal");
+        if (!m) return;
+        m.setAttribute("aria-hidden","true");
+        m.classList.remove("is-open");
+      },
+      setMode(mode) {
+        this.mode = mode;
+        const btnLogin = document.getElementById("btnDoLogin");
+        const btnReg = document.getElementById("btnDoRegister");
+        const toggle = document.getElementById("toggleAuthMode");
+        const emailWrap = document.getElementById("registerEmailWrap");
+
+        if (mode === "login") {
+          btnLogin.hidden = false;
+          btnReg.hidden = true;
+          if (emailWrap) emailWrap.style.display = "none";
+          if (toggle) toggle.textContent = "切換到註冊";
+        } else {
+          btnLogin.hidden = true;
+          btnReg.hidden = false;
+          if (emailWrap) emailWrap.style.display = "block";
+          if (toggle) toggle.textContent = "切換到登入";
+        }
+      },
+      setHeaderUI() {
+        const btnLogin = document.getElementById("btnLogin");
+        const btnLogout = document.getElementById("btnLogout");
+        const navUserName = document.getElementById("navUserName");
+
+        if (this.user) {
+          if (btnLogin) btnLogin.hidden = true;
+          if (btnLogout) btnLogout.hidden = false;
+          if (navUserName) navUserName.textContent = this.user.display_name || "";
+        } else {
+          if (btnLogin) btnLogin.hidden = false;
+          if (btnLogout) btnLogout.hidden = true;
+          if (navUserName) navUserName.textContent = "";
+        }
+      },
+      async request(path, options = {}) {
+        const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+        if (this.token) headers["Authorization"] = "Bearer " + this.token;
+
+        const res = await fetch(API_BASE + path, { ...options, headers });
+        const ct = res.headers.get("content-type") || "";
+        const body = ct.includes("application/json") ? await res.json() : await res.text();
+        if (!res.ok) {
+          const msg = (body && body.detail) ? body.detail : (typeof body === "string" ? body : "Request failed");
+          throw new Error(msg);
+        }
+        return body;
+      },
+      async refreshMe() {
+        if (!this.token) {
+          this.user = null;
+          localStorage.removeItem(USER_KEY);
+          this.setHeaderUI();
+          return null;
+        }
+        try {
+          const me = await this.request("/api/auth/me", { method: "GET" });
+          this.user = me;
+          localStorage.setItem(USER_KEY, JSON.stringify(me));
+        } catch (e) {
+          this.token = "";
+          this.user = null;
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+        }
+        this.setHeaderUI();
+        return this.user;
+      },
+      async login(display_name, password) {
+        const r = await this.request("/api/auth/login_token", {
+          method: "POST",
+          body: JSON.stringify({ display_name, password })
+        });
+        this.token = r.token || "";
+        localStorage.setItem(TOKEN_KEY, this.token);
+        await this.refreshMe();
+      },
+      async register(display_name, password, email) {
+        // 註冊仍用原本 register（會回 user），然後再走 token login
+        await this.request("/api/auth/register", {
+          method: "POST",
+          body: JSON.stringify({ display_name, password, email })
+        });
+        await this.login(display_name, password);
+      },
+      logout() {
+        this.token = "";
+        this.user = null;
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        this.setHeaderUI();
+      }
+    };
+
+    window.Auth = Auth;
+
+    document.addEventListener("click", (e) => {
+      const t = e.target;
+      if (t && t.getAttribute && t.getAttribute("data-close") === "1") Auth.closeModal();
+    });
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      Auth.setMode("login");
+      Auth.setHeaderUI();
+      await Auth.refreshMe();
+
+      const btnLogin = document.getElementById("btnLogin");
+      const btnLogout = document.getElementById("btnLogout");
+      if (btnLogin) btnLogin.addEventListener("click", (e) => { e.preventDefault(); Auth.openModal(); });
+      if (btnLogout) btnLogout.addEventListener("click", (e) => { e.preventDefault(); Auth.logout(); alert("已登出"); });
+
+      const toggle = document.getElementById("toggleAuthMode");
+      if (toggle) toggle.addEventListener("click", (e) => { e.preventDefault(); Auth.setMode(Auth.mode === "login" ? "register" : "login"); });
+
+      const btnDoLogin = document.getElementById("btnDoLogin");
+      const btnDoRegister = document.getElementById("btnDoRegister");
+      const loginName = document.getElementById("loginName");
+      const loginPassword = document.getElementById("loginPassword");
+      const registerEmail = document.getElementById("registerEmail");
+
+      if (btnDoLogin) btnDoLogin.addEventListener("click", async () => {
+        try {
+          const dn = (loginName.value || "").trim();
+          const pw = (loginPassword.value || "").trim();
+          if (!dn || !pw) return alert("請輸入帳號與密碼");
+          await Auth.login(dn, pw);
+          Auth.closeModal();
+          alert("登入成功");
+          window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: Auth.user } }));
+        } catch (err) {
+          alert(err.message || "登入失敗");
+        }
+      });
+
+      if (btnDoRegister) btnDoRegister.addEventListener("click", async () => {
+        try {
+          const dn = (loginName.value || "").trim();
+          const pw = (loginPassword.value || "").trim();
+          const em = (registerEmail.value || "").trim();
+          if (!dn || !pw) return alert("請輸入帳號與密碼");
+          await Auth.register(dn, pw, em);
+          Auth.closeModal();
+          alert("註冊成功（已登入）");
+          window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: Auth.user } }));
+        } catch (err) {
+          alert(err.message || "註冊失敗");
+        }
+      });
+    });
+  </script>
+
+  <script src="js/booking.js"></script>
 </body>
 </html>
