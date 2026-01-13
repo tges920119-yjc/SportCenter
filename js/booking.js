@@ -261,66 +261,88 @@
 
   // ---------- render bottom table ----------
   function renderSlots(bookedMap, courts, TIMES) {
-    elSlotsGrid.innerHTML = "";
+  elSlotsGrid.innerHTML = "";
 
-    const items = (courts?.items?.length ? courts.items : [
-      { id: 1, name: "羽球A場地" },
-      { id: 2, name: "羽球B場地" },
-    ]);
+  const items = (courts?.items?.length ? courts.items : [
+    { id: 1, name: "羽球A場地" },
+    { id: 2, name: "羽球B場地" },
+    { id: 3, name: "籃球A場地" },
+    { id: 4, name: "籃球B場地" },
+  ]);
 
-    // 你要四個場地一次顯示
-    const showCourts = items.slice(0, 4);
+  // 固定顯示前 4 個（你目前就是四個場地）
+  const showCourts = items.slice(0, 4);
 
-    const wrap = document.createElement("div");
-    wrap.style.display = "grid";
-    wrap.style.gridTemplateColumns = `90px ${"1fr ".repeat(showCourts.length).trim()}`;
-    wrap.style.gap = "10px";
-    wrap.style.alignItems = "center";
+  // ✅ 分隔線：畫在「籃球A」這一欄左邊
+  // grid 欄位：1=時間, 2=羽球A, 3=羽球B, 4=籃球A, 5=籃球B
+  const SEP_COURT_INDEX = 2; // showCourts[2] = 第三個場地（籃球A） => 在它左邊畫線
 
-    wrap.appendChild(cell("時間", true));
-    for (const c of showCourts) wrap.appendChild(cell(c.name || `Court ${c.id}`, true));
+  const wrap = document.createElement("div");
+  wrap.style.display = "grid";
+  wrap.style.gridTemplateColumns = `90px ${"1fr ".repeat(showCourts.length).trim()}`;
+  wrap.style.gap = "10px";
+  wrap.style.alignItems = "center";
 
-    for (const t of TIMES) {
-      wrap.appendChild(cell(t, false));
-      for (const c of showCourts) {
-        wrap.appendChild(slotButton(String(c.id), t, bookedMap, c.name || `Court ${c.id}`));
-      }
-    }
+  // Header
+  wrap.appendChild(cell("時間", true));
+  showCourts.forEach((c, idx) => {
+    const h = cell(c.name || `Court ${c.id}`, true);
+    if (idx === SEP_COURT_INDEX) addSeparatorLeft(h);
+    wrap.appendChild(h);
+  });
 
-    elSlotsGrid.appendChild(wrap);
+  // Rows
+  for (const t of TIMES) {
+    wrap.appendChild(cell(t, false));
 
-    function cell(text, head) {
-      const d = document.createElement("div");
-      d.textContent = text;
-      d.style.fontWeight = head ? "800" : "600";
-      d.style.opacity = head ? "0.95" : "0.88";
-      return d;
-    }
-
-    function slotButton(courtId, time, booked, courtName) {
-      const isBooked = booked.get(`${courtId}|${time}`) === true;
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = isBooked ? "btn btn--ghost" : "btn";
-      btn.textContent = isBooked ? "已預約" : "可預約";
-      btn.disabled = isBooked;
-
-      btn.addEventListener("click", async () => {
-        if (!ensureLogin()) return;
-
-        elCourtSelect.value = courtId;
-        elTimeSelect.value = time;
-
-        const dateYMD = elDate.value || today();
-        const price = await computePriceForSelection(courtId, dateYMD, time);
-
-        msgBook(`已選擇：${courtName} ${time}｜金額：${price.amount} ${price.currency}（${price.name}）按「確認預約」送出`);
-      });
-
-      return btn;
-    }
+    showCourts.forEach((c, idx) => {
+      const btn = slotButton(String(c.id), t, bookedMap, c.name || `Court ${c.id}`);
+      if (idx === SEP_COURT_INDEX) addSeparatorLeft(btn);
+      wrap.appendChild(btn);
+    });
   }
+
+  elSlotsGrid.appendChild(wrap);
+
+  function cell(text, head) {
+    const d = document.createElement("div");
+    d.textContent = text;
+    d.style.fontWeight = head ? "800" : "600";
+    d.style.opacity = head ? "0.95" : "0.88";
+    return d;
+  }
+
+  function addSeparatorLeft(el) {
+    // 垂直分隔線（你想要像兩區塊）
+    el.style.borderLeft = "2px solid rgba(0,0,0,0.12)";
+    el.style.paddingLeft = "12px";
+    el.style.marginLeft = "2px";
+  }
+
+  function slotButton(courtId, time, booked, courtName) {
+    const isBooked = booked.get(`${courtId}|${time}`) === true;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = isBooked ? "btn btn--ghost" : "btn";
+    btn.textContent = isBooked ? "已預約" : "可預約";
+    btn.disabled = isBooked;
+
+    btn.addEventListener("click", async () => {
+      if (!ensureLogin()) return;
+
+      elCourtSelect.value = courtId;
+      elTimeSelect.value = time;
+
+      const dateYMD = elDate.value || today();
+      const price = await computePriceForSelection(courtId, dateYMD, time);
+
+      msgBook(`已選擇：${courtName} ${time}｜金額：${price.amount} ${price.currency}（${price.name}）按「確認預約」送出`);
+    });
+
+    return btn;
+  }
+}
 
   // ---------- main ----------
   let TIMES = [];
