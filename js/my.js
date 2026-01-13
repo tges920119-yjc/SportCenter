@@ -1,114 +1,177 @@
-// js/my.js
-(function () {
-  console.log("my.js loaded OK");
+console.log("my.js loaded OK", new Date().toISOString());
+function $(id) { return document.getElementById(id); }
 
-  const $ = (id) => document.getElementById(id);
+function courtLabel(courtId) {
+  if (String(courtId) === "1") return "A 場";
+  if (String(courtId) === "2") return "B 場";
+  return String(courtId || "");
+}
 
-  function toDatePart(dt) {
-    const s = String(dt || "");
-    return s.includes("T") ? s.split("T")[0] : s.split(" ")[0];
+function statusZh(st) {
+  const m = { confirmed: "已確認", pending: "待確認", cancelled: "已取消" };
+  return m[st] || (st || "");
+}
+
+function toParts(dt) {
+  // dt 可能是 "2026-01-13 12:00:00" 或 ISO
+  const s = String(dt || "").replace(" ", "T");
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const HH = String(d.getHours()).padStart(2, "0");
+    const MM = String(d.getMinutes()).padStart(2, "0");
+    return { date: `${yyyy}-${mm}-${dd}`, time: `${HH}:${MM}` };
   }
-  function toTimePart(dt) {
-    const s = String(dt || "");
-    const t = s.includes("T") ? s.split("T")[1] : (s.split(" ")[1] || "");
-    return (t || "").slice(0, 5);
+  // fallback：用字串拆
+  const raw = String(dt || "");
+  const [datePart, timePart] = raw.split(" ");
+  return { date: datePart || "", time: (timePart || "").slice(0,5) };
+}
+
+function setMsg(text) { const el = $("myMsg"); if (el) el.textContent = text || ""; }
+function setCount(text) { const el = $("myCount"); if (el) el.textContent = text || ""; }
+
+async function ensureLoginUI() {
+  const me = (typeof window.refreshMe === "function") ? await window.refreshMe() : null;
+
+  const navUserName = $("navUserName");
+  const btnLogin = $("btnLogin");
+  const btnLogout = $("btnLogout");
+
+  if (me) {
+    if (navUserName) navUserName.textContent = me.display_name || "";
+    if (btnLogin) btnLogin.hidden = true;
+    if (btnLogout) btnLogout.hidden = false;
+  } else {
+    if (navUserName) navUserName.textContent = "";
+    if (btnLogin) btnLogin.hidden = false;
+    if (btnLogout) btnLogout.hidden = true;
   }
-  function statusZh(st) {
-    const m = { confirmed: "已確認", pending: "待確認", cancelled: "已取消" };
-    return m[st] || st || "";
-  }
-  function money(v) {
-    const n = Number(v);
-    return Number.isFinite(n) ? String(n) : "";
-  }
+  return me;
+}
 
-  function ensureLoggedIn() {
-    const t = window.getToken ? window.getToken() : "";
-    if (!t) {
-      alert("請先登入後再查看我的預約");
-      location.href = "index.html";
-      return false;
-    }
-    $("meName").textContent = t;
-    return true;
-  }
+function renderRows(items) {
+  const tb = $("myTbody");
+  if (!tb) return;
+  tb.innerHTML = "";
 
-  async function load() {
-    if (!ensureLoggedIn()) return;
+  items.forEach(r => {
+    const st = toParts(r.start_at);
+    const ed = toParts(r.end_at);
 
-    $("msg").textContent = "載入中…";
-    $("tbody").innerHTML = "";
-    $("sum").textContent = "";
+    const price = (r.price_amount != null)
+      ? `${r.price_amount} ${r.currency || ""}`.trim()
+      : "";
 
-    const date = $("fDate").value.trim();
-    const courtId = $("fCourt").value.trim();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08); font-weight:900;">${courtLabel(r.court_id)}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${st.date}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${st.time}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${ed.time}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${statusZh(r.status)}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${price}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">
+        <button class="btn btn--ghost btnCancel" type="button" data-bno="${r.booking_no || ""}">
+          取消
+        </button>
+      </td>
+    `;
+    tb.appendChild(tr);
+  });
 
-    const params = new URLSearchParams();
-    if (date) params.set("date", date);
-    if (courtId) params.set("court_id", courtId);
+  tb.querySelectorAll(".btnCancel").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const bno = btn.getAttribute("data-bno");
+      if (!bno) return;
+      if (!confirm("確定要取消這筆預約？")) return;
 
-    try {
-      const list = await window.api(`/my/bookings${params.toString() ? "?" + params.toString() : ""}`);
-
-      $("sum").textContent = `共 ${list.length} 筆${date ? `（${date}）` : ""}`;
-      if (!list.length) {
-        $("msg").textContent = "目前沒有符合條件的未來預約。";
-        return;
+      try {
+        btn.disabled = true;
+        await window.api(`/api/bookings/${encodeURIComponent(bno)}/cancel`, { method: "POST" });
+        setMsg("已取消。");
+        await loadMyBookings();
+      } catch (err) {
+        alert(err?.message || "取消失敗");
+        btn.disabled = false;
       }
+    });
+  });
+}
 
-      $("tbody").innerHTML = list.map((row) => {
-        const d = toDatePart(row.start_at);
-        const st = toTimePart(row.start_at);
-        const ed = toTimePart(row.end_at);
-        const court = row.court_name || (row.court_id === 1 ? "A 場" : row.court_id === 2 ? "B 場" : String(row.court_id));
+async function loadMyBookings() {
+  setMsg("");
+  setCount("");
 
-        return `
-          <tr>
-            <td>${court}</td>
-            <td>${d}</td>
-            <td>${st}</td>
-            <td>${ed}</td>
-            <td>${statusZh(row.status)}</td>
-            <td>${money(row.price_amount)}</td>
-            <td><button class="btn btn--danger btn--sm" data-cancel="${row.booking_no}">取消</button></td>
-          </tr>
-        `;
-      }).join("");
-
-      $("msg").textContent = "";
-
-      $("tbody").querySelectorAll("[data-cancel]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const bookingNo = btn.getAttribute("data-cancel");
-          if (!bookingNo) return;
-          if (!confirm("確定要取消這筆預約嗎？")) return;
-
-          btn.disabled = true;
-          try {
-            await window.api(`/bookings/${bookingNo}/cancel`, { method: "POST" });
-            await load();
-          } catch (e) {
-            alert(String(e.message || e));
-          } finally {
-            btn.disabled = false;
-          }
-        });
-      });
-    } catch (e) {
-      $("msg").textContent = `載入失敗：${String(e.message || e)}`;
-    }
+  const me = await ensureLoginUI();
+  if (!me) {
+    setMsg("請先登入後再查看我的預約（需要 token）。");
+    const tb = $("myTbody"); if (tb) tb.innerHTML = "";
+    return;
   }
 
-  $("btnReload").addEventListener("click", load);
-  $("btnClear").addEventListener("click", () => {
-    $("fDate").value = "";
-    load();
+  const date = ($("myDate")?.value || "").trim();
+  const court = ($("myCourt")?.value || "").trim();
+
+  try {
+    setMsg("載入中…");
+
+    const qs = new URLSearchParams();
+    if (court) qs.set("court_id", court);
+    if (date) qs.set("date", date);
+
+    const url = "/api/my/bookings" + (qs.toString() ? "?" + qs.toString() : "");
+    const data = await window.api(url, { method: "GET" });
+    const items = (data && data.items) ? data.items : [];
+
+    renderRows(items);
+
+    const label = [
+      "未來未取消",
+      date ? `日期=${date}` : "",
+      court ? courtLabel(court) : ""
+    ].filter(Boolean).join(" / ");
+
+    setCount(`共 ${items.length} 筆（${label}）`);
+    setMsg(items.length ? "" : "目前沒有未來預約。");
+  } catch (err) {
+    setMsg(err?.message || "載入失敗");
+  }
+}
+
+function bindUI() {
+  // 預設日期留空（顯示全部未來）
+  const d = $("myDate");
+  if (d) d.value = "";
+
+  $("btnReloadMy")?.addEventListener("click", (e) => { e.preventDefault(); loadMyBookings(); });
+
+  $("btnClearDate")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if ($("myDate")) $("myDate").value = "";
+    loadMyBookings();
   });
 
-  $("btnLogout").addEventListener("click", () => {
-    window.setToken("");
-    location.href = "index.html";
+  $("myDate")?.addEventListener("change", () => loadMyBookings());
+  $("myCourt")?.addEventListener("change", () => loadMyBookings());
+
+  // 這裡不重做你 index 的登入流程，只做登出（保持相容）
+  $("btnLogout")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    if (typeof window.setToken === "function") window.setToken("");
+    if (typeof window.setUser === "function") window.setUser(null);
+    await ensureLoginUI();
+    setMsg("已登出。");
+    const tb = $("myTbody"); if (tb) tb.innerHTML = "";
+    setCount("");
   });
 
-  load();
-})();
+  window.addEventListener("auth:changed", () => loadMyBookings());
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  bindUI();
+  await loadMyBookings();
+});

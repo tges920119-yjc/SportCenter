@@ -1,8 +1,9 @@
-// js/common.js
+// ~/web/js/common.js
 (function () {
   console.log("common.js loaded OK");
 
-  window.API_BASE = window.API_BASE || "https://booking.novrise.org/api";
+  // API_ORIGIN 不要含 /api
+  window.API_ORIGIN = window.API_ORIGIN || "https://booking.novrise.org";
 
   function getToken() {
     return localStorage.getItem("token") || "";
@@ -10,6 +11,16 @@
   function setToken(t) {
     if (!t) localStorage.removeItem("token");
     else localStorage.setItem("token", t);
+    window.dispatchEvent(new Event("auth:changed"));
+  }
+
+  // 可讓別的頁面存 user 資訊（不強制依賴）
+  let _user = null;
+  function setUser(u) {
+    _user = u || null;
+  }
+  function getUser() {
+    return _user;
   }
 
   function todayLocalYYYYMMDD() {
@@ -21,7 +32,15 @@
   }
 
   async function api(path, opts = {}) {
-    const url = `${window.API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+    let url = path;
+
+    // full url
+    if (!/^https?:\/\//i.test(url)) {
+      // normalize: ensure starts with /api
+      if (!url.startsWith("/")) url = "/" + url;
+      if (!url.startsWith("/api/")) url = "/api" + url;
+      url = window.API_ORIGIN + url;
+    }
 
     const headers = Object.assign(
       { "Content-Type": "application/json" },
@@ -31,7 +50,7 @@
     const token = getToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(url, Object.assign({}, opts, { headers }));
+    const res = await fetch(url, Object.assign({}, opts, { headers, credentials: "include" }));
 
     if (!res.ok) {
       let msg = `${res.status} ${res.statusText}`;
@@ -53,13 +72,48 @@
     return await res.text();
   }
 
+  // 讓舊程式可用（你之前 refreshMe 掛在 window）
+  async function refreshMe() {
+    const navUserName = document.getElementById("navUserName") || document.getElementById("meName");
+    const btnLogin = document.getElementById("btnLogin");
+    const btnLogout = document.getElementById("btnLogout");
+
+    const token = getToken();
+    if (!token) {
+      setUser(null);
+      if (navUserName) navUserName.textContent = "";
+      if (btnLogin) btnLogin.hidden = false;
+      if (btnLogout) btnLogout.hidden = true;
+      return null;
+    }
+
+    try {
+      const me = await api("/api/auth/me", { method: "GET" });
+      setUser(me);
+
+      if (navUserName) navUserName.textContent = me.display_name || "";
+      if (btnLogin) btnLogin.hidden = true;
+      if (btnLogout) btnLogout.hidden = false;
+
+      return me;
+    } catch (e) {
+      // token 失效就清掉
+      setToken("");
+      setUser(null);
+      if (navUserName) navUserName.textContent = "";
+      if (btnLogin) btnLogin.hidden = false;
+      if (btnLogout) btnLogout.hidden = true;
+      return null;
+    }
+  }
+
+  // modal（如果你原本有用）
   function openModal(id) {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.add("is-open");
     el.setAttribute("aria-hidden", "false");
   }
-
   function closeModal(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -67,22 +121,13 @@
     el.setAttribute("aria-hidden", "true");
   }
 
-  async function refreshMe() {
-    const t = getToken();
-    const meName = document.getElementById("meName");
-    const btnLogin = document.getElementById("btnLogin");
-    const btnLogout = document.getElementById("btnLogout");
-
-    if (meName) meName.textContent = t ? t : "";
-    if (btnLogin) btnLogin.hidden = !!t;
-    if (btnLogout) btnLogout.hidden = !t;
-  }
-
+  window.api = api;
   window.getToken = getToken;
   window.setToken = setToken;
-  window.api = api;
+  window.setUser = setUser;
+  window.getUser = getUser;
+  window.refreshMe = refreshMe;
   window.todayLocalYYYYMMDD = todayLocalYYYYMMDD;
   window.openModal = openModal;
   window.closeModal = closeModal;
-  window.refreshMe = refreshMe;
 })();
