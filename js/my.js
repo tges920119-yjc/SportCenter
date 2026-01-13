@@ -1,10 +1,25 @@
 console.log("my.js loaded OK", new Date().toISOString());
 function $(id) { return document.getElementById(id); }
 
+let COURT_NAME_MAP = new Map(); // id(string) -> name
+
+async function loadCourtsMap() {
+  try {
+    const data = await window.api("/api/courts", { method: "GET" });
+    const items = data?.items || [];
+    COURT_NAME_MAP = new Map(items.map(c => [String(c.id), String(c.name || c.id)]));
+  } catch (e) {
+    // 失敗就保留空 map，fallback 由 courtLabel 處理
+    console.warn("loadCourtsMap failed", e);
+  }
+}
+
 function courtLabel(courtId) {
-  if (String(courtId) === "1") return "A 場";
-  if (String(courtId) === "2") return "B 場";
-  return String(courtId || "");
+  const k = String(courtId || "");
+  if (COURT_NAME_MAP.has(k)) return COURT_NAME_MAP.get(k);
+  if (k === "1") return "A 場";
+  if (k === "2") return "B 場";
+  return k;
 }
 
 function statusZh(st) {
