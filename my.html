@@ -1,3 +1,4 @@
+<!-- my.html -->
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -5,141 +6,88 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SportCenter - 我的預約</title>
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="icon" href="LOGO.png">
 </head>
-
-<body class="theme-sport">
-  <header class="header header--sport">
-    <div class="container header__inner header__inner--sport">
-      <a class="brand brand--sport" href="index.html" aria-label="SportCenter">
-        <img src="LOGO.png" alt="logo" class="brand__logo" />
-        <div class="brand__text">
-          <div class="brand__title">SportCenter</div>
-          <div class="brand__subtitle">球場預約系統</div>
-        </div>
-      </a>
-
-      <nav class="nav nav--sport" aria-label="主選單">
-        <a class="nav__link" href="index.html">預約</a>
-        <a class="nav__link" href="venues.html">場館</a>
-        <a class="nav__link is-active" href="my.html">我的預約</a>
-      </nav>
-
-      <div class="nav__actions nav__actions--sport">
-        <span id="navUserName" class="nav__user"></span>
-        <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
-        <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="LOGO.PNG" alt="logo" class="logo" />
+      <div>
+        <div class="brand__title">SportCenter</div>
+        <div class="brand__sub">球場預約系統</div>
       </div>
+    </div>
+
+    <nav class="nav">
+      <a href="index.html">預約</a>
+      <a href="venues.html">場館</a>
+      <a class="active" href="my.html">我的預約</a>
+    </nav>
+
+    <div class="right">
+      <span id="meName" class="me"></span>
+      <button id="btnLogout" class="btn btn--ghost" type="button">登出</button>
     </div>
   </header>
 
-  <main class="container page page--sport">
-    <section class="card card--sport">
-      <div class="card__head">
-        <div>
-          <h1 class="h1">我的預約</h1>
-          <p class="muted">預設顯示你「未來」且「未取消」的預約；日期/球場只作為篩選。</p>
-        </div>
-      </div>
+  <main class="container">
+    <h1>我的預約</h1>
+    <p class="muted">
+      預設顯示你「未來」且「未取消」的預約；日期/球場只作為篩選。
+    </p>
 
-      <div class="layout-2col">
-        <!-- LEFT: filters -->
-        <div class="panel">
-          <div class="grid grid--2">
-            <div class="form__group">
-              <label class="form__label">日期（可選篩選）</label>
-              <input id="myDate" type="date" class="input" />
-              <div class="muted" style="margin-top:6px;">留空＝顯示全部未來預約。</div>
-            </div>
-
-            <div class="form__group">
-              <label class="form__label">球場（可選篩選）</label>
-              <select id="myCourt" class="select">
-                <option value="">全部</option>
-                <option value="1">A 場</option>
-                <option value="2">B 場</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="actions actions--sport" style="margin-top:10px;">
-            <button id="btnReloadMy" class="btn" type="button">重新載入</button>
-            <button id="btnClearDate" class="btn btn--ghost" type="button">清除日期篩選</button>
-            <span id="myMsg" class="muted" style="margin-left:12px;"></span>
-          </div>
-
-          <div class="hint" style="margin-top:12px;">
-            <div class="hint__dot"></div>
-            <div class="hint__text muted">
-              取消預約只會更新 status=cancelled 與 updated_at；取消後同時段可再次預約。
-            </div>
-          </div>
+    <section class="card">
+      <div class="filters">
+        <div class="field">
+          <label>日期（可選篩選）</label>
+          <input id="fDate" type="date" />
+          <div class="hint">留空＝顯示全部未來預約</div>
         </div>
 
-        <!-- RIGHT: list -->
-        <div class="panel">
-          <div class="infoBox">
-            <div class="infoBox__title">清單</div>
-            <div id="myCount" class="muted" style="margin-top:6px;"></div>
-          </div>
-
-          <div style="overflow:auto; margin-top:10px;">
-            <table style="width:100%; border-collapse:collapse;">
-              <thead>
-                <tr>
-                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.12);">球場</th>
-                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.12);">開始</th>
-                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.12);">結束</th>
-                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.12);">狀態</th>
-                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.12);">金額</th>
-                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.12);">booking_no</th>
-                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.12);">操作</th>
-                </tr>
-              </thead>
-              <tbody id="myTbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Login Modal：沿用你現有 common.js 的 modal/登入流程（如果 common.js 內已有） -->
-  <div id="loginModal" class="modal" aria-hidden="true">
-    <div class="modal__backdrop" data-close="1"></div>
-    <div class="modal__panel" role="dialog" aria-modal="true">
-      <div class="modal__header">
-        <div class="authTabs" role="tablist" aria-label="登入/註冊">
-          <button id="tabLogin" class="authTab is-active" type="button">登入</button>
-          <button id="tabRegister" class="authTab" type="button">註冊</button>
-        </div>
-        <button class="btn btn--ghost authClose" type="button" data-close="1" aria-label="關閉">✕</button>
-      </div>
-
-      <div class="modal__body">
-        <div class="form__group">
-          <label class="form__label">帳號</label>
-          <input id="loginName" class="input" placeholder="輸入帳號" autocomplete="username" />
-        </div>
-
-        <div class="form__group">
-          <label class="form__label">密碼</label>
-          <input id="loginPassword" type="password" class="input" placeholder="輸入密碼" autocomplete="current-password" />
-        </div>
-
-        <div class="form__group" id="registerEmailWrap" style="display:none;">
-          <label class="form__label">Email</label>
-          <input id="registerEmail" type="email" class="input" placeholder="test@example.com" autocomplete="email" />
+        <div class="field">
+          <label>球場（可選篩選）</label>
+          <select id="fCourt">
+            <option value="">全部</option>
+            <option value="1">A 場</option>
+            <option value="2">B 場</option>
+          </select>
+          <div class="hint">可依你的 courts id 調整</div>
         </div>
 
         <div class="actions">
-          <button id="btnDoLogin" class="btn" type="button">登入</button>
-          <button id="btnDoRegister" class="btn" type="button" hidden>註冊</button>
-          <a href="#" id="toggleAuthMode" class="link" style="margin-left:12px;">切換到註冊</a>
+          <button id="btnReload" class="btn" type="button">重新載入</button>
+          <button id="btnClear" class="btn btn--ghost" type="button">清除日期篩選</button>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">清單</div>
+          <div id="sum" class="muted"></div>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>球場</th>
+              <th>日期</th>
+              <th>開始</th>
+              <th>結束</th>
+              <th>狀態</th>
+              <th>金額</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="msg" class="muted" style="margin-top:10px;"></div>
+    </section>
+  </main>
 
   <script src="js/common.js"></script>
   <script src="js/my.js"></script>
