@@ -1,293 +1,322 @@
-/* ===== Header height tighten ===== */
-.header { padding: 6px 0 !important; }
-.header__inner { padding-top: 6px !important; padding-bottom: 6px !important; }
-.brand__title { line-height: 1.1 !important; }
-.brand__subtitle { line-height: 1.1 !important; margin-top: 2px !important; }
-.nav__link { padding: 6px 10px !important; }
-.nav__actions .btn { padding: 6px 10px !important; }
-
-/* ===== Force ALL LOGO.png images to be small ===== */
-img[src$="LOGO.png" i],
-img[src*="/LOGO.png" i],
-img[src*="LOGO.png" i],
-img[alt*="logo" i]{
-  width: min(220px, 40vw) !important;
-  height: auto !important;
-  max-height: 56px !important;
-  object-fit: contain !important;
-  display: block !important;
-}
-
-/* ===== Modal layering + colors fix ===== */
-.modal { position: fixed; inset: 0; z-index: 9999; display: none; }
-.modal.is-open { display: block; }
-
-.modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); z-index: 0; }
-.modal__panel {
-  position: relative; z-index: 1;
-  background: #fff !important; color: #111 !important;
-  border-radius: 14px;
-  width: min(420px, calc(100vw - 40px));
-  margin: 20px; padding: 16px 18px;
-  box-shadow: 0 16px 50px rgba(0,0,0,.35);
-}
-.modal__panel .muted { color: #666 !important; }
-.modal__panel .form__label { color: #222 !important; }
-.modal__panel .input {
-  background: #f6f7f9 !important;
-  color: #111 !important;
-  border: 1px solid #d6dbe3 !important;
-}
-#toggleAuthMode { position: relative; z-index: 2; pointer-events: auto !important; color: #2563eb !important; text-decoration: underline; }
-.modal__header .btn { color: #111 !important; }
-
 /* =========================================================
-   SPORT BRIGHT (C) - CLEAN OVERRIDES (PASTE AT VERY BOTTOM)
-   Purpose:
-   - Fix header alignment to right
-   - Fix logo sizing without breaking other images
-   - Fix modal width/overflow
-   - Keep bright minimal sport style using info.png background
+   SportCenter - Bright Minimal Theme (C) - Clean Version
+   File: css/style.css
+   Notes:
+   - Use with <body class="theme-sport">
+   - Background image: /info.png (same level as index.html)
    ========================================================= */
 
-/* ---- Base theme background ---- */
+/* ---------- Basic reset-ish ---------- */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", Arial, sans-serif; }
+
+/* ---------- Theme background ---------- */
 body.theme-sport{
   color:#0f172a;
   background:
     linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.96) 55%, rgba(255,255,255,.98) 100%),
-    url("../info.png") !important;
-  background-size: cover !important;
-  background-position: center top !important;
-  background-attachment: fixed !important;
+    url("../info.png");
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
 }
 
-/* ---- Header: single row + right aligned ---- */
-body.theme-sport .header--sport{
+/* ---------- Layout helpers (if your old css has container/grid, keep same class names) ---------- */
+.container { width: min(1100px, calc(100% - 32px)); margin: 0 auto; }
+.page--sport{ padding: 20px 0 44px; }
+
+.grid{ display:grid; gap: 12px; }
+.grid--2{ grid-template-columns: 1fr 1fr; }
+@media (max-width: 900px){
+  .grid--2{ grid-template-columns: 1fr; }
+}
+
+/* ---------- Header ---------- */
+.header--sport{
   position: sticky;
   top: 0;
   z-index: 50;
   background: rgba(255,255,255,.82);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(15,23,42,.08);
-  padding: 6px 0 !important; /* tighten */
+  padding: 6px 0;
 }
 
-body.theme-sport .header__inner--sport{
-  display:flex !important;
-  align-items:center !important;
-  justify-content: space-between !important; /* KEY */
-  gap: 14px !important;
-  padding: 6px 0 !important;
+.header__inner--sport{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 /* Brand */
-body.theme-sport .brand--sport{
-  display:flex !important;
-  align-items:center !important;
-  gap: 10px !important;
-  text-decoration:none !important;
-  color: inherit !important;
-  min-width: 220px;
+.brand--sport{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  text-decoration:none;
+  color: inherit;
   flex: 0 0 auto;
-}
-body.theme-sport .brand--sport .brand__title{
-  line-height: 1.1 !important;
-  font-weight: 950 !important;
-  font-size: 16px !important;
-}
-body.theme-sport .brand--sport .brand__subtitle{
-  line-height: 1.1 !important;
-  margin-top: 2px !important;
-  font-size: 12px !important;
-  color: rgba(15,23,42,.60) !important;
+  min-width: 220px;
 }
 
-/* Logo (ONLY header logo, avoid global img selector conflicts) */
-body.theme-sport .brand__logo{
-  width: 40px !important;
-  height: 40px !important;
-  max-height: 40px !important;
-  object-fit: contain !important;
-  border-radius: 10px !important;
-  background: rgba(15,23,42,.04) !important;
-  padding: 6px !important;
-  display:block !important;
+.brand__logo{
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: rgba(15,23,42,.04);
+  padding: 6px;
+  display:block;
 }
 
-/* Nav inline */
-body.theme-sport .nav--sport{
-  display:flex !important;
-  align-items:center !important;
-  gap: 8px !important;
-  flex: 1 1 auto !important;
+.brand__title{ font-weight: 950; font-size: 16px; line-height:1.1; }
+.brand__subtitle{ font-size: 12px; color: rgba(15,23,42,.60); margin-top: 2px; line-height:1.1; }
+
+/* Nav */
+.nav--sport{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
-/* Nav links */
-body.theme-sport .nav--sport .nav__link{
-  padding: 6px 10px !important; /* tighten */
-  text-decoration:none !important;
-  color: rgba(15,23,42,.78) !important;
-  font-weight: 900 !important;
-  border-radius: 999px !important;
-  border: 1px solid transparent !important;
+.nav__link{
+  text-decoration:none;
+  color: rgba(15,23,42,.78);
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
   transition: .15s ease;
   white-space: nowrap;
 }
-body.theme-sport .nav--sport .nav__link:hover{
-  background: rgba(34,197,94,.10) !important;
-  border-color: rgba(34,197,94,.18) !important;
+.nav__link:hover{
+  background: rgba(34,197,94,.10);
+  border-color: rgba(34,197,94,.18);
 }
-body.theme-sport .nav--sport .nav__link.is-active{
-  background: rgba(34,197,94,.14) !important;
-  border-color: rgba(34,197,94,.28) !important;
-  color: #0f172a !important;
+.nav__link.is-active{
+  background: rgba(34,197,94,.14);
+  border-color: rgba(34,197,94,.28);
+  color: #0f172a;
 }
 
-/* Right actions (FORCE to right) */
-body.theme-sport .nav__actions--sport{
-  margin-left: auto !important;  /* KEY */
-  display:flex !important;
-  align-items:center !important;
-  gap: 10px !important;
-  flex: 0 0 auto !important;
+/* Right actions */
+.nav__actions--sport{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
-body.theme-sport .nav__actions--sport .btn{
-  padding: 6px 10px !important; /* tighten */
-}
-body.theme-sport .nav__user{
-  font-weight: 950 !important;
-  color: rgba(15,23,42,.75) !important;
+.nav__user{
+  font-weight: 950;
+  color: rgba(15,23,42,.75);
   white-space: nowrap;
 }
 
-/* ---- Main card / panels ---- */
-body.theme-sport .page--sport{ padding: 20px 0 44px; }
-
-body.theme-sport .card--sport{
-  background: rgba(255,255,255,.86) !important;
-  border: 1px solid rgba(15,23,42,.10) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 16px 50px rgba(2,6,23,.10) !important;
-  padding: 18px !important;
+/* Mobile: hide subtitle */
+@media (max-width: 900px){
+  .brand__text{ display:none; }
+}
+@media (max-width: 640px){
+  .nav__user{ display:none; }
+  .nav--sport{ gap: 6px; }
+  .nav__link{ padding: 6px 8px; }
 }
 
-body.theme-sport .layout-2col{
-  display:grid !important;
-  grid-template-columns: 1.15fr .85fr !important;
-  gap: 14px !important;
+/* ---------- Card / Panels ---------- */
+.card--sport{
+  background: rgba(255,255,255,.86);
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 16px;
+  box-shadow: 0 16px 50px rgba(2,6,23,.10);
+  padding: 18px;
 }
 
-body.theme-sport .panel{
-  background: rgba(255,255,255,.72) !important;
-  border: 1px solid rgba(15,23,42,.08) !important;
-  border-radius: 14px !important;
-  padding: 14px !important;
+.card__head{
+  display:flex;
+  align-items:flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
-body.theme-sport .slots-grid--sport{
-  margin-top: 10px !important;
-  background: rgba(255,255,255,.92) !important;
-  border: 1px dashed rgba(15,23,42,.18) !important;
-  border-radius: 14px !important;
-  min-height: 220px !important;
-  padding: 12px !important;
+.h1{ font-size: 22px; font-weight: 950; margin: 0 0 4px; }
+.muted{ color: rgba(15,23,42,.60); }
+
+.layout-2col{
+  display:grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: 14px;
+}
+@media (max-width: 900px){
+  .layout-2col{ grid-template-columns: 1fr; }
 }
 
-/* ---- Inputs ---- */
-body.theme-sport .input,
-body.theme-sport .select{
-  background: rgba(255,255,255,.96) !important;
-  border: 1px solid rgba(15,23,42,.16) !important;
-  border-radius: 12px !important;
-  padding: 10px 12px !important;
-  color: rgba(15,23,42,.92) !important;
-}
-body.theme-sport .input:focus,
-body.theme-sport .select:focus{
-  outline: none !important;
-  border-color: rgba(34,197,94,.55) !important;
-  box-shadow: 0 0 0 4px rgba(34,197,94,.18) !important;
+.panel{
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(15,23,42,.08);
+  border-radius: 14px;
+  padding: 14px;
 }
 
-/* ---- Buttons ---- */
-body.theme-sport .btn{
-  background: #16a34a !important;
-  border: 1px solid rgba(0,0,0,.06) !important;
-  border-radius: 12px !important;
-  color: #fff !important;
-  font-weight: 950 !important;
-}
-body.theme-sport .btn--ghost{
-  background: rgba(15,23,42,.06) !important;
-  border: 1px solid rgba(15,23,42,.12) !important;
-  color: rgba(15,23,42,.85) !important;
+.infoBox__title{ font-weight: 950; letter-spacing: .2px; }
+.slots-grid--sport{
+  margin-top: 10px;
+  background: rgba(255,255,255,.92);
+  border: 1px dashed rgba(15,23,42,.18);
+  border-radius: 14px;
+  min-height: 220px;
+  padding: 12px;
 }
 
-/* ---- Modal (fix overflow + keep clean) ---- */
-body.theme-sport .modal{ position: fixed; inset: 0; z-index: 9999; display: none; }
-body.theme-sport .modal.is-open{ display: block; }
+/* ---------- Forms ---------- */
+.form__label{
+  font-weight: 900;
+  font-size: 13px;
+  color: rgba(15,23,42,.78);
+}
 
-body.theme-sport .modal__backdrop{
+.input, .select{
+  width: 100%;
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(15,23,42,.16);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: rgba(15,23,42,.92);
+}
+
+.input:focus, .select:focus{
+  outline: none;
+  border-color: rgba(34,197,94,.55);
+  box-shadow: 0 0 0 4px rgba(34,197,94,.18);
+}
+
+.actions{
+  margin-top: 12px;
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+
+/* ---------- Buttons ---------- */
+.btn{
+  background: #16a34a;
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 12px;
+  color: #fff;
+  padding: 10px 14px;
+  font-weight: 950;
+  cursor: pointer;
+}
+.btn:hover{ filter: brightness(1.03); }
+
+.btn--ghost{
+  background: rgba(15,23,42,.06);
+  border: 1px solid rgba(15,23,42,.12);
+  color: rgba(15,23,42,.85);
+}
+
+/* ---------- Hint ---------- */
+.hint{
+  margin-top: 10px;
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+}
+.hint__dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(34,197,94,.85);
+  margin-top: 5px;
+}
+.hint__text{ line-height: 1.4; }
+
+/* =========================================================
+   MODAL - Clean, centered, tabs, X always right
+   ========================================================= */
+.modal{ position: fixed; inset: 0; z-index: 9999; display: none; }
+.modal.is-open{ display: block; }
+
+.modal__backdrop{
   position:absolute; inset:0;
-  background: rgba(2,6,23,.35) !important;
+  background: rgba(2,6,23,.35);
   z-index: 0;
 }
 
-body.theme-sport .modal__panel{
-  position: relative; z-index: 1;
-  width: min(460px, calc(100vw - 28px)) !important; /* prevent overflow */
-  margin: 10vh auto 0 !important;                 /* center */
-  padding: 16px 16px !important;
-  background: rgba(255,255,255,.96) !important;
-  color: #111 !important;
-  border: 1px solid rgba(15,23,42,.12) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 16px 60px rgba(0,0,0,.25) !important;
-  box-sizing: border-box !important;
-}
-body.theme-sport .modal__panel .input{
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-body.theme-sport .modal__panel .muted{ color: #666 !important; }
-body.theme-sport .modal__panel .form__label{ color: #222 !important; }
-body.theme-sport .link{ color: #16a34a !important; font-weight: 900 !important; text-decoration: underline !important; }
-
-/* ---- Responsive ---- */
-@media (max-width: 900px){
-  body.theme-sport .layout-2col{ grid-template-columns: 1fr !important; }
-  body.theme-sport .brand__text{ display:none !important; }
-}
-@media (max-width: 640px){
-  body.theme-sport .nav__user{ display:none !important; }
-  body.theme-sport .nav--sport .nav__link{ padding: 6px 8px !important; }
+.modal__panel{
+  position: relative;
+  z-index: 1;
+  width: min(520px, calc(100vw - 28px));
+  margin: 10vh auto 0;
+  padding: 16px 16px;
+  background: rgba(255,255,255,.96);
+  color: #111;
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 16px;
+  box-shadow: 0 16px 60px rgba(0,0,0,.25);
 }
 
-/* ===== Modal header: title left, X right ===== */
-body.theme-sport .modal__header{
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 12px !important;
+/* Header row: tabs left, X right */
+.modal__header{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-/* 讓標題吃剩餘空間，X 就會被推到最右 */
-body.theme-sport .modal__header .h2,
-body.theme-sport .modal__header h3{
-  margin: 0 !important;
-  flex: 1 1 auto !important;
+/* Tabs */
+.authTabs{
+  display: inline-flex;
+  background: rgba(15,23,42,.06);
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
 }
 
-/* X 按鈕固定在右邊 */
-body.theme-sport .modal__header [data-close="1"]{
-  margin-left: auto !important;
-  flex: 0 0 auto !important;
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 10px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  line-height: 1 !important;
+.authTab{
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(15,23,42,.70);
+  font-weight: 950;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.authTab.is-active{
+  background: #fff;
+  color: rgba(15,23,42,.92);
+  box-shadow: 0 8px 18px rgba(2,6,23,.10);
+  border: 1px solid rgba(15,23,42,.10);
+}
+
+/* Close button */
+.authClose{
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height: 1;
+}
+
+/* Modal body: keep readable */
+.modal__panel .muted{ color: #666; }
+.modal__panel .form__label{ color: #222; }
+.modal__panel .input{ background: #f6f7f9; border-color: #d6dbe3; color:#111; }
+
+/* Link */
+.link{
+  color: #16a34a;
+  font-weight: 900;
+  text-decoration: underline;
 }

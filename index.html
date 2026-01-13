@@ -42,9 +42,8 @@
         </div>
       </div>
 
-      <!-- 兩欄：左表單、右可預約資訊 -->
       <div class="layout-2col">
-        <!-- LEFT: form -->
+        <!-- LEFT -->
         <div class="panel panel--form">
           <div class="grid grid--2">
             <div class="form__group">
@@ -72,13 +71,13 @@
             </div>
           </div>
 
-          <div class="actions actions--sport">
+          <div class="actions">
             <button id="btnBook" class="btn" type="button">確認預約</button>
-            <span id="bookingMsg" class="muted" style="margin-left:12px;"></span>
+            <span id="bookingMsg" class="muted"></span>
           </div>
         </div>
 
-        <!-- RIGHT: availability -->
+        <!-- RIGHT -->
         <div class="panel panel--info">
           <div class="infoBox">
             <div class="infoBox__title">目前可預約狀態</div>
@@ -89,20 +88,27 @@
 
           <div class="hint">
             <div class="hint__dot"></div>
-            <div class="hint__text muted">點選時段後再按「確認預約」。若顯示已預約代表該時段不可選。</div>
+            <div class="hint__text muted">
+              點選時段後再按「確認預約」。若顯示已預約代表該時段不可選。
+            </div>
           </div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Login Modal（維持你原本結構） -->
+  <!-- Login Modal -->
   <div id="loginModal" class="modal" aria-hidden="true">
     <div class="modal__backdrop" data-close="1"></div>
-    <div class="modal__panel" role="dialog" aria-modal="true">
+
+    <div class="modal__panel" role="dialog" aria-modal="true" aria-label="登入/註冊">
       <div class="modal__header">
-        <h3 class="h2">登入 / 註冊</h3>
-        <button class="btn btn--ghost" type="button" data-close="1">✕</button>
+        <div class="authTabs" role="tablist" aria-label="登入/註冊">
+          <button id="tabLogin" class="authTab is-active" type="button" role="tab" aria-selected="true">登入</button>
+          <button id="tabRegister" class="authTab" type="button" role="tab" aria-selected="false">註冊</button>
+        </div>
+
+        <button class="btn btn--ghost authClose" type="button" data-close="1" aria-label="關閉">✕</button>
       </div>
 
       <div class="modal__body">
@@ -119,22 +125,25 @@
         <div class="form__group" id="registerEmailWrap" style="display:none;">
           <label class="form__label">Email</label>
           <input id="registerEmail" type="email" class="input" placeholder="test@example.com" autocomplete="email" />
+          <div class="muted" style="margin-top:6px;">Email 可留空；填寫需符合格式。</div>
         </div>
 
         <div class="actions">
           <button id="btnDoLogin" class="btn" type="button">登入</button>
           <button id="btnDoRegister" class="btn" type="button" hidden>註冊</button>
-          <a href="#" id="toggleAuthMode" class="link" style="margin-left:12px;">切換到註冊</a>
+
+          <!-- 舊切換連結：改成隱藏（以 tabs 為主，避免雙系統互打） -->
+          <a href="#" id="toggleAuthMode" class="link" style="display:none;">切換</a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 你原本的 Auth inline script 保留（不要動） -->
+  <!-- Auth inline script (preserve logic, only consolidate & add tab sync) -->
   <script>
     // ====== CONFIG ======
     const TOKEN_KEY = "sportcenter_token";
-    const USER_KEY = "sportcenter_user";
+    const USER_KEY  = "sportcenter_user";
 
     const Auth = {
       mode: "login",
@@ -146,34 +155,39 @@
       openModal() {
         const m = document.getElementById("loginModal");
         if (!m) return;
-        m.setAttribute("aria-hidden","false");
+        m.setAttribute("aria-hidden", "false");
         m.classList.add("is-open");
       },
       closeModal() {
         const m = document.getElementById("loginModal");
         if (!m) return;
-        m.setAttribute("aria-hidden","true");
+        m.setAttribute("aria-hidden", "true");
         m.classList.remove("is-open");
       },
+
       setMode(mode) {
         this.mode = mode;
+
         const btnLogin = document.getElementById("btnDoLogin");
-        const btnReg = document.getElementById("btnDoRegister");
-        const toggle = document.getElementById("toggleAuthMode");
+        const btnReg   = document.getElementById("btnDoRegister");
         const emailWrap = document.getElementById("registerEmailWrap");
 
-        if (mode === "login") {
-          btnLogin.hidden = false;
-          btnReg.hidden = true;
-          if (emailWrap) emailWrap.style.display = "none";
-          if (toggle) toggle.textContent = "切換到註冊";
-        } else {
-          btnLogin.hidden = true;
-          btnReg.hidden = false;
-          if (emailWrap) emailWrap.style.display = "block";
-          if (toggle) toggle.textContent = "切換到登入";
+        const isLogin = (mode === "login");
+        if (btnLogin) btnLogin.hidden = !isLogin;
+        if (btnReg)   btnReg.hidden   = isLogin;
+        if (emailWrap) emailWrap.style.display = isLogin ? "none" : "block";
+
+        // ---- sync tabs UI ----
+        const tabLogin = document.getElementById("tabLogin");
+        const tabRegister = document.getElementById("tabRegister");
+        if (tabLogin && tabRegister) {
+          tabLogin.classList.toggle("is-active", isLogin);
+          tabRegister.classList.toggle("is-active", !isLogin);
+          tabLogin.setAttribute("aria-selected", isLogin ? "true" : "false");
+          tabRegister.setAttribute("aria-selected", !isLogin ? "true" : "false");
         }
       },
+
       setHeaderUI() {
         const btnLogin = document.getElementById("btnLogin");
         const btnLogout = document.getElementById("btnLogout");
@@ -189,6 +203,7 @@
           if (navUserName) navUserName.textContent = "";
         }
       },
+
       async request(path, options = {}) {
         const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
         if (this.token) headers["Authorization"] = "Bearer " + this.token;
@@ -196,12 +211,20 @@
         const res = await fetch(API_BASE + path, { ...options, headers });
         const ct = res.headers.get("content-type") || "";
         const body = ct.includes("application/json") ? await res.json() : await res.text();
+
         if (!res.ok) {
-          const msg = (body && body.detail) ? body.detail : (typeof body === "string" ? body : "Request failed");
+          // FastAPI errors: {detail: "..."} or {detail: [...]}
+          let msg = "Request failed";
+          if (body && typeof body === "object" && body.detail) {
+            msg = (typeof body.detail === "string") ? body.detail : "資料格式不正確（請確認欄位）";
+          } else if (typeof body === "string") {
+            msg = body;
+          }
           throw new Error(msg);
         }
         return body;
       },
+
       async refreshMe() {
         if (!this.token) {
           this.user = null;
@@ -213,7 +236,7 @@
           const me = await this.request("/api/auth/me", { method: "GET" });
           this.user = me;
           localStorage.setItem(USER_KEY, JSON.stringify(me));
-        } catch (e) {
+        } catch {
           this.token = "";
           this.user = null;
           localStorage.removeItem(TOKEN_KEY);
@@ -222,6 +245,7 @@
         this.setHeaderUI();
         return this.user;
       },
+
       async login(display_name, password) {
         const r = await this.request("/api/auth/login_token", {
           method: "POST",
@@ -231,6 +255,7 @@
         localStorage.setItem(TOKEN_KEY, this.token);
         await this.refreshMe();
       },
+
       async register(display_name, password, email) {
         await this.request("/api/auth/register", {
           method: "POST",
@@ -238,6 +263,7 @@
         });
         await this.login(display_name, password);
       },
+
       logout() {
         this.token = "";
         this.user = null;
@@ -249,36 +275,46 @@
 
     window.Auth = Auth;
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+      // ---- Modal close behaviors ----
       const modal = document.getElementById("loginModal");
       const panel = modal?.querySelector(".modal__panel");
       const backdrop = modal?.querySelector(".modal__backdrop");
 
-      // 點 backdrop 才關
+      // 點 backdrop 關
       if (backdrop) backdrop.addEventListener("click", () => Auth.closeModal());
 
-      // 點 X 才關
+      // 點 X 關
       modal?.querySelectorAll('[data-close="1"]').forEach(el => {
         el.addEventListener("click", (e) => { e.preventDefault(); Auth.closeModal(); });
       });
 
-      // panel 內部點擊不關（阻止冒泡到 backdrop）
+      // panel 內點擊不關
       if (panel) panel.addEventListener("click", (e) => e.stopPropagation());
-    });
 
-    document.addEventListener("DOMContentLoaded", async () => {
+      // ---- Init auth UI ----
       Auth.setMode("login");
       Auth.setHeaderUI();
       await Auth.refreshMe();
 
+      // Header buttons
       const btnLogin = document.getElementById("btnLogin");
       const btnLogout = document.getElementById("btnLogout");
       if (btnLogin) btnLogin.addEventListener("click", (e) => { e.preventDefault(); Auth.openModal(); });
-      if (btnLogout) btnLogout.addEventListener("click", (e) => { e.preventDefault(); Auth.logout(); alert("已登出"); });
+      if (btnLogout) btnLogout.addEventListener("click", (e) => {
+        e.preventDefault();
+        Auth.logout();
+        alert("已登出");
+        window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: null } }));
+      });
 
-      const toggle = document.getElementById("toggleAuthMode");
-      if (toggle) toggle.addEventListener("click", (e) => { e.preventDefault(); Auth.setMode(Auth.mode === "login" ? "register" : "login"); });
+      // Tabs -> switch mode
+      const tabLogin = document.getElementById("tabLogin");
+      const tabRegister = document.getElementById("tabRegister");
+      if (tabLogin) tabLogin.addEventListener("click", () => Auth.setMode("login"));
+      if (tabRegister) tabRegister.addEventListener("click", () => Auth.setMode("register"));
 
+      // Form buttons
       const btnDoLogin = document.getElementById("btnDoLogin");
       const btnDoRegister = document.getElementById("btnDoRegister");
       const loginName = document.getElementById("loginName");
@@ -287,30 +323,30 @@
 
       if (btnDoLogin) btnDoLogin.addEventListener("click", async () => {
         try {
-          const dn = (loginName.value || "").trim();
-          const pw = (loginPassword.value || "").trim();
+          const dn = (loginName?.value || "").trim();
+          const pw = (loginPassword?.value || "").trim();
           if (!dn || !pw) return alert("請輸入帳號與密碼");
           await Auth.login(dn, pw);
           Auth.closeModal();
           alert("登入成功");
           window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: Auth.user } }));
         } catch (err) {
-          alert(err.message || "登入失敗");
+          alert(err?.message || "登入失敗");
         }
       });
 
       if (btnDoRegister) btnDoRegister.addEventListener("click", async () => {
         try {
-          const dn = (loginName.value || "").trim();
-          const pw = (loginPassword.value || "").trim();
-          const em = (registerEmail.value || "").trim();
+          const dn = (loginName?.value || "").trim();
+          const pw = (loginPassword?.value || "").trim();
+          const em = (registerEmail?.value || "").trim();
           if (!dn || !pw) return alert("請輸入帳號與密碼");
           await Auth.register(dn, pw, em);
           Auth.closeModal();
           alert("註冊成功（已登入）");
           window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: Auth.user } }));
         } catch (err) {
-          alert(err.message || "註冊失敗");
+          alert(err?.message || "註冊失敗");
         }
       });
     });
