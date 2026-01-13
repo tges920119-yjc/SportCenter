@@ -263,3 +263,31 @@ body.theme-sport .link{ color: #16a34a !important; font-weight: 900 !important; 
   body.theme-sport .nav__user{ display:none !important; }
   body.theme-sport .nav--sport .nav__link{ padding: 6px 8px !important; }
 }
+
+/* ===== Modal header: title left, X right ===== */
+body.theme-sport .modal__header{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+/* 讓標題吃剩餘空間，X 就會被推到最右 */
+body.theme-sport .modal__header .h2,
+body.theme-sport .modal__header h3{
+  margin: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+/* X 按鈕固定在右邊 */
+body.theme-sport .modal__header [data-close="1"]{
+  margin-left: auto !important;
+  flex: 0 0 auto !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
