@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -5,352 +6,76 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SportCenter - 預約</title>
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="icon" href="LOGO.png">
 </head>
-
-<body class="theme-sport">
-  <header class="header header--sport">
-    <div class="container header__inner header__inner--sport">
-      <a class="brand brand--sport" href="index.html" aria-label="SportCenter">
-        <img src="LOGO.png" alt="logo" class="brand__logo" />
-        <div class="brand__text">
-          <div class="brand__title">SportCenter</div>
-          <div class="brand__subtitle">球場預約系統</div>
-        </div>
-      </a>
-
-      <nav class="nav nav--sport" aria-label="主選單">
-        <a class="nav__link is-active" href="index.html">預約</a>
-        <a class="nav__link" href="venues.html">場館</a>
-        <a class="nav__link" href="my.html">我的預約</a>
-      </nav>
-
-      <div class="nav__actions nav__actions--sport">
-        <span id="navUserName" class="nav__user"></span>
-        <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
-        <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="LOGO.PNG" alt="logo" class="logo" />
+      <div>
+        <div class="brand__title">SportCenter</div>
+        <div class="brand__sub">球場預約系統</div>
       </div>
+    </div>
+
+    <nav class="nav">
+      <a class="active" href="index.html">預約</a>
+      <a href="venues.html">場館</a>
+      <a href="my.html">我的預約</a>
+    </nav>
+
+    <div class="right">
+      <span id="meName" class="me"></span>
+      <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
+      <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
     </div>
   </header>
 
-  <main class="container page page--sport">
-    <section class="card card--sport">
-      <div class="card__head">
-        <div>
-          <h1 class="h1">立即預約</h1>
-          <p class="muted">未登入無法預約；登入後可直接選擇日期與時段。</p>
+  <main class="container">
+    <h1>預約</h1>
+    <p class="muted">選擇日期/球場後，點「預約」即可。未登入會先要求登入。</p>
+
+    <section class="card">
+      <div class="filters">
+        <div class="field">
+          <label>日期</label>
+          <input id="dateInput" type="date" />
+        </div>
+        <div class="field">
+          <label>球場</label>
+          <select id="courtSelect">
+            <option value="1">A 場</option>
+            <option value="2">B 場</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button id="btnReloadSlots" class="btn" type="button">重新載入</button>
         </div>
       </div>
 
-      <div class="layout-2col">
-        <!-- LEFT -->
-        <div class="panel panel--form">
-          <div class="grid grid--2">
-            <div class="form__group">
-              <label class="form__label">日期</label>
-              <input id="bookingDate" type="date" class="input" />
-            </div>
-
-            <div class="form__group">
-              <label class="form__label">球場</label>
-              <select id="courtSelect" class="select">
-                <option value="1">A 場</option>
-                <option value="2">B 場</option>
-              </select>
-            </div>
-
-            <div class="form__group">
-              <label class="form__label">開始時間</label>
-              <select id="timeSelect" class="select"></select>
-              <div class="muted" style="margin-top:6px;">每次預約 1 小時。</div>
-            </div>
-
-            <div class="form__group">
-              <label class="form__label">備註</label>
-              <input id="note" type="text" class="input" placeholder="（可選）" />
-            </div>
-          </div>
-
-          <div class="actions">
-            <button id="btnBook" class="btn" type="button">確認預約</button>
-            <span id="bookingMsg" class="muted"></span>
-          </div>
-        </div>
-
-        <!-- RIGHT -->
-        <div class="panel panel--info">
-          <div class="infoBox">
-            <div class="infoBox__title">目前可預約狀態</div>
-            <div id="loadMsg" class="muted" style="margin-top:6px;"></div>
-          </div>
-
-          <div id="slotsGrid" class="slots-grid slots-grid--sport"></div>
-
-          <div class="hint">
-            <div class="hint__dot"></div>
-            <div class="hint__text muted">
-              點選時段後再按「確認預約」。若顯示已預約代表該時段不可選。
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="loadMsg" class="muted" style="margin-top:12px;"></div>
+      <div id="slotsGrid" class="slots" style="margin-top:12px;"></div>
     </section>
   </main>
 
   <!-- Login Modal -->
   <div id="loginModal" class="modal" aria-hidden="true">
-    <div class="modal__backdrop" data-close="1"></div>
-
-    <div class="modal__panel" role="dialog" aria-modal="true" aria-label="登入/註冊">
-      <div class="modal__header">
-        <div class="authTabs" role="tablist" aria-label="登入/註冊">
-          <button id="tabLogin" class="authTab is-active" type="button" role="tab" aria-selected="true">登入</button>
-          <button id="tabRegister" class="authTab" type="button" role="tab" aria-selected="false">註冊</button>
-        </div>
-
-        <button class="btn btn--ghost authClose" type="button" data-close="1" aria-label="關閉">✕</button>
+    <div class="modal__panel" id="loginPanel">
+      <div class="modal__head">
+        <div class="modal__title">登入</div>
+        <button id="btnCloseLogin" class="btn btn--ghost btn--sm" type="button">關閉</button>
       </div>
 
-      <div class="modal__body">
-        <div class="form__group">
-          <label class="form__label">帳號</label>
-          <input id="loginName" class="input" placeholder="輸入帳號" autocomplete="username" />
-        </div>
+      <div class="field" style="margin-top:10px;">
+        <label>帳號（display_name）</label>
+        <input id="loginName" type="text" placeholder="例如：tges920119" />
+        <div class="hint">此版本用 display_name 直接登入（token）。</div>
+      </div>
 
-        <div class="form__group">
-          <label class="form__label">密碼</label>
-          <input id="loginPassword" type="password" class="input" placeholder="輸入密碼" autocomplete="current-password" />
-        </div>
-
-        <div class="form__group" id="registerEmailWrap" style="display:none;">
-          <label class="form__label">Email</label>
-          <input id="registerEmail" type="email" class="input" placeholder="test@example.com" autocomplete="email" />
-          <div class="muted" style="margin-top:6px;">Email 可留空；填寫需符合格式。</div>
-        </div>
-
-        <div class="actions">
-          <button id="btnDoLogin" class="btn" type="button">登入</button>
-          <button id="btnDoRegister" class="btn" type="button" hidden>註冊</button>
-
-          <!-- 舊切換連結：改成隱藏（以 tabs 為主，避免雙系統互打） -->
-          <a href="#" id="toggleAuthMode" class="link" style="display:none;">切換</a>
-        </div>
+      <div class="actions" style="margin-top:12px;">
+        <button id="btnDoLogin" class="btn" type="button">登入</button>
       </div>
     </div>
   </div>
-
-  <!-- Auth inline script (preserve logic, only consolidate & add tab sync) -->
-  <script>
-    // ====== CONFIG ======
-    const TOKEN_KEY = "sportcenter_token";
-    const USER_KEY  = "sportcenter_user";
-
-    const Auth = {
-      mode: "login",
-      token: localStorage.getItem(TOKEN_KEY) || "",
-      user: (() => {
-        try { return JSON.parse(localStorage.getItem(USER_KEY) || "null"); } catch { return null; }
-      })(),
-
-      openModal() {
-        const m = document.getElementById("loginModal");
-        if (!m) return;
-        m.setAttribute("aria-hidden", "false");
-        m.classList.add("is-open");
-      },
-      closeModal() {
-        const m = document.getElementById("loginModal");
-        if (!m) return;
-        m.setAttribute("aria-hidden", "true");
-        m.classList.remove("is-open");
-      },
-
-      setMode(mode) {
-        this.mode = mode;
-
-        const btnLogin = document.getElementById("btnDoLogin");
-        const btnReg   = document.getElementById("btnDoRegister");
-        const emailWrap = document.getElementById("registerEmailWrap");
-
-        const isLogin = (mode === "login");
-        if (btnLogin) btnLogin.hidden = !isLogin;
-        if (btnReg)   btnReg.hidden   = isLogin;
-        if (emailWrap) emailWrap.style.display = isLogin ? "none" : "block";
-
-        // ---- sync tabs UI ----
-        const tabLogin = document.getElementById("tabLogin");
-        const tabRegister = document.getElementById("tabRegister");
-        if (tabLogin && tabRegister) {
-          tabLogin.classList.toggle("is-active", isLogin);
-          tabRegister.classList.toggle("is-active", !isLogin);
-          tabLogin.setAttribute("aria-selected", isLogin ? "true" : "false");
-          tabRegister.setAttribute("aria-selected", !isLogin ? "true" : "false");
-        }
-      },
-
-      setHeaderUI() {
-        const btnLogin = document.getElementById("btnLogin");
-        const btnLogout = document.getElementById("btnLogout");
-        const navUserName = document.getElementById("navUserName");
-
-        if (this.user) {
-          if (btnLogin) btnLogin.hidden = true;
-          if (btnLogout) btnLogout.hidden = false;
-          if (navUserName) navUserName.textContent = this.user.display_name || "";
-        } else {
-          if (btnLogin) btnLogin.hidden = false;
-          if (btnLogout) btnLogout.hidden = true;
-          if (navUserName) navUserName.textContent = "";
-        }
-      },
-
-      async request(path, options = {}) {
-        const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-        if (this.token) headers["Authorization"] = "Bearer " + this.token;
-
-        const res = await fetch(API_BASE + path, { ...options, headers });
-        const ct = res.headers.get("content-type") || "";
-        const body = ct.includes("application/json") ? await res.json() : await res.text();
-
-        if (!res.ok) {
-          // FastAPI errors: {detail: "..."} or {detail: [...]}
-          let msg = "Request failed";
-          if (body && typeof body === "object" && body.detail) {
-            msg = (typeof body.detail === "string") ? body.detail : "資料格式不正確（請確認欄位）";
-          } else if (typeof body === "string") {
-            msg = body;
-          }
-          throw new Error(msg);
-        }
-        return body;
-      },
-
-      async refreshMe() {
-        if (!this.token) {
-          this.user = null;
-          localStorage.removeItem(USER_KEY);
-          this.setHeaderUI();
-          return null;
-        }
-        try {
-          const me = await this.request("/api/auth/me", { method: "GET" });
-          this.user = me;
-          localStorage.setItem(USER_KEY, JSON.stringify(me));
-        } catch {
-          this.token = "";
-          this.user = null;
-          localStorage.removeItem(TOKEN_KEY);
-          localStorage.removeItem(USER_KEY);
-        }
-        this.setHeaderUI();
-        return this.user;
-      },
-
-      async login(display_name, password) {
-        const r = await this.request("/api/auth/login_token", {
-          method: "POST",
-          body: JSON.stringify({ display_name, password })
-        });
-        this.token = r.token || "";
-        localStorage.setItem(TOKEN_KEY, this.token);
-        await this.refreshMe();
-      },
-
-      async register(display_name, password, email) {
-        await this.request("/api/auth/register", {
-          method: "POST",
-          body: JSON.stringify({ display_name, password, email })
-        });
-        await this.login(display_name, password);
-      },
-
-      logout() {
-        this.token = "";
-        this.user = null;
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        this.setHeaderUI();
-      }
-    };
-
-    window.Auth = Auth;
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      // ---- Modal close behaviors ----
-      const modal = document.getElementById("loginModal");
-      const panel = modal?.querySelector(".modal__panel");
-      const backdrop = modal?.querySelector(".modal__backdrop");
-
-      // 點 backdrop 關
-      if (backdrop) backdrop.addEventListener("click", () => Auth.closeModal());
-
-      // 點 X 關
-      modal?.querySelectorAll('[data-close="1"]').forEach(el => {
-        el.addEventListener("click", (e) => { e.preventDefault(); Auth.closeModal(); });
-      });
-
-      // panel 內點擊不關
-      if (panel) panel.addEventListener("click", (e) => e.stopPropagation());
-
-      // ---- Init auth UI ----
-      Auth.setMode("login");
-      Auth.setHeaderUI();
-      await Auth.refreshMe();
-
-      // Header buttons
-      const btnLogin = document.getElementById("btnLogin");
-      const btnLogout = document.getElementById("btnLogout");
-      if (btnLogin) btnLogin.addEventListener("click", (e) => { e.preventDefault(); Auth.openModal(); });
-      if (btnLogout) btnLogout.addEventListener("click", (e) => {
-        e.preventDefault();
-        Auth.logout();
-        alert("已登出");
-        window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: null } }));
-      });
-
-      // Tabs -> switch mode
-      const tabLogin = document.getElementById("tabLogin");
-      const tabRegister = document.getElementById("tabRegister");
-      if (tabLogin) tabLogin.addEventListener("click", () => Auth.setMode("login"));
-      if (tabRegister) tabRegister.addEventListener("click", () => Auth.setMode("register"));
-
-      // Form buttons
-      const btnDoLogin = document.getElementById("btnDoLogin");
-      const btnDoRegister = document.getElementById("btnDoRegister");
-      const loginName = document.getElementById("loginName");
-      const loginPassword = document.getElementById("loginPassword");
-      const registerEmail = document.getElementById("registerEmail");
-
-      if (btnDoLogin) btnDoLogin.addEventListener("click", async () => {
-        try {
-          const dn = (loginName?.value || "").trim();
-          const pw = (loginPassword?.value || "").trim();
-          if (!dn || !pw) return alert("請輸入帳號與密碼");
-          await Auth.login(dn, pw);
-          Auth.closeModal();
-          alert("登入成功");
-          window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: Auth.user } }));
-        } catch (err) {
-          alert(err?.message || "登入失敗");
-        }
-      });
-
-      if (btnDoRegister) btnDoRegister.addEventListener("click", async () => {
-        try {
-          const dn = (loginName?.value || "").trim();
-          const pw = (loginPassword?.value || "").trim();
-          const em = (registerEmail?.value || "").trim();
-          if (!dn || !pw) return alert("請輸入帳號與密碼");
-          await Auth.register(dn, pw, em);
-          Auth.closeModal();
-          alert("註冊成功（已登入）");
-          window.dispatchEvent(new CustomEvent("auth:changed", { detail: { user: Auth.user } }));
-        } catch (err) {
-          alert(err?.message || "註冊失敗");
-        }
-      });
-    });
-  </script>
 
   <script src="js/common.js"></script>
   <script src="js/booking.js"></script>
