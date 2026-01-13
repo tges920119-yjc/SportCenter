@@ -12,6 +12,31 @@
   const elBtnBook = $("btnBook");
   const elBookingMsg = $("bookingMsg");
 
+  function assertElsOrStop() {
+    const missing = [];
+    if (!elDate) missing.push("#bookingDate");
+    if (!elLoadMsg) missing.push("#loadMsg");
+    if (!elSlotsGrid) missing.push("#slotsGrid");
+    if (!elCourtSelect) missing.push("#courtSelect");
+    if (!elTimeSelect) missing.push("#timeSelect");
+    if (!elBtnBook) missing.push("#btnBook");
+    if (!elBookingMsg) missing.push("#bookingMsg");
+
+    if (missing.length) {
+      // 盡量把訊息顯示在頁面上（沒有就 alert）
+      const msg = `index.html 缺少必要元素：${missing.join(", ")}。請確認 index.html 的 id 是否正確。`;
+      console.error(msg);
+      if (elLoadMsg) {
+        elLoadMsg.textContent = msg;
+        elLoadMsg.classList.add("error");
+      } else {
+        alert(msg);
+      }
+      return false;
+    }
+    return true;
+  }
+
   // 你要的時間範圍
   const TIMES = ["08:00", "09:00", "10:00", "11:00", "12:00"];
 
@@ -228,6 +253,7 @@
   }
 
   function init() {
+    if (!assertElsOrStop()) return;
     if (elDate) {
       elDate.setAttribute("type", "date");
       if (!elDate.value || elDate.value.includes("/")) elDate.value = today();
