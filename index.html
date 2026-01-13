@@ -152,9 +152,13 @@
     const TOKEN_KEY = "sportcenter_token";
     const USER_KEY  = "sportcenter_user";
 
-    // ✅ 重要：補上 API_BASE，避免 Auth.request 使用未宣告變數
-    // 你的 common.js 若有 window.API_BASE，就用它；否則 fallback 到正式網域
-    const API_BASE = (window.API_BASE || "https://booking.novrise.org").replace(/\/+$/, "");
+    // ✅ 保底定義 API_BASE（避免 "API_BASE is not defined"）
+    // 優先用 common.js 提供的 window.API_BASE / window.API_ORIGIN，最後才 fallback
+    const API_BASE = (
+      (window.API_BASE) ||
+      (window.API_ORIGIN) ||
+      "https://booking.novrise.org"
+    ).replace(/\/+$/, "");
 
     const Auth = {
       mode: "login",
