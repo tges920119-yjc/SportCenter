@@ -1,14 +1,4 @@
-/* my.js - 我的預約
- * 依賴：common.js 需提供
- * - window.api(path, opts)
- * - window.getToken(), window.setToken()
- * - window.refreshMe()
- * - window.Auth（若你 common.js 有做 modal/登入流程會更完整）
- * - window.todayLocalYYYYMMDD()
- */
-
 console.log("my.js loaded OK", new Date().toISOString());
-
 function $(id) { return document.getElementById(id); }
 
 function courtLabel(courtId) {
@@ -18,7 +8,6 @@ function courtLabel(courtId) {
 }
 
 function fmtDT(s) {
-  // s 可能是 "2026-01-12T08:00:00" 或 "2026-01-12 08:00:00"
   if (!s) return "";
   const t = String(s).replace(" ", "T");
   const d = new Date(t);
@@ -33,48 +22,17 @@ function fmtDT(s) {
   return String(s);
 }
 
-function setMsg(text) {
-  const el = $("myMsg");
-  if (el) el.textContent = text || "";
-}
+function setMsg(text) { const el = $("myMsg"); if (el) el.textContent = text || ""; }
+function setCount(text) { const el = $("myCount"); if (el) el.textContent = text || ""; }
 
-function setCount(text) {
-  const el = $("myCount");
-  if (el) el.textContent = text || "";
-}
-
-function clearTable() {
-  const tb = $("myTbody");
-  if (tb) tb.innerHTML = "";
-}
-
-function renderRows(rows) {
-  const tb = $("myTbody");
-  if (!tb) return;
-
-  tb.innerHTML = "";
-  rows.forEach(r => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08); font-weight:900;">${courtLabel(r.court_id)}</td>
-      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${fmtDT(r.start_at)}</td>
-      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${fmtDT(r.end_at)}</td>
-      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${r.status || ""}</td>
-      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px;">${r.booking_no || ""}</td>
-    `;
-    tb.appendChild(tr);
-  });
-}
-
-async function ensureLoginOrPrompt() {
-  // 依你現行流程：token + /api/auth/me
+async function ensureLogin() {
   if (typeof window.refreshMe !== "function") return null;
   const me = await window.refreshMe();
 
-  // 更新 header UI（若 common.js 沒做，這裡補一點）
   const navUserName = $("navUserName");
   const btnLogin = $("btnLogin");
   const btnLogout = $("btnLogout");
+
   if (me) {
     if (navUserName) navUserName.textContent = me.display_name || "";
     if (btnLogin) btnLogin.hidden = true;
@@ -87,56 +45,102 @@ async function ensureLoginOrPrompt() {
   return me;
 }
 
+function renderRows(rows) {
+  const tb = $("myTbody");
+  if (!tb) return;
+  tb.innerHTML = "";
+
+  rows.forEach(r => {
+    const tr = document.createElement("tr");
+    const price = (r.price_amount != null) ? `${r.price_amount} ${r.currency || ""}`.trim() : "";
+
+    tr.innerHTML = `
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08); font-weight:900;">${courtLabel(r.court_id)}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${fmtDT(r.start_at)}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${fmtDT(r.end_at)}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${r.status || ""}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">${price}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px;">${r.booking_no || ""}</td>
+      <td style="padding:10px 8px; border-bottom:1px solid rgba(15,23,42,.08);">
+        <button class="btn btn--ghost btnCancel" type="button" data-bno="${r.booking_no || ""}">
+          取消
+        </button>
+      </td>
+    `;
+    tb.appendChild(tr);
+  });
+
+  tb.querySelectorAll(".btnCancel").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const bno = btn.getAttribute("data-bno");
+      if (!bno) return;
+      if (!confirm("確定要取消這筆預約？")) return;
+
+      try {
+        btn.disabled = true;
+        await window.api(`/api/bookings/${encodeURIComponent(bno)}/cancel`, { method: "POST" });
+        setMsg("已取消。");
+        await loadMyBookings();
+      } catch (err) {
+        alert(err?.message || "取消失敗");
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
 async function loadMyBookings() {
   setMsg("");
   setCount("");
-  clearTable();
 
-  const me = await ensureLoginOrPrompt();
+  const me = await ensureLogin();
   if (!me) {
     setMsg("請先登入後再查看我的預約。");
+    const tb = $("myTbody"); if (tb) tb.innerHTML = "";
+    setCount("");
     return;
   }
 
-  const date = ($("myDate")?.value || "").trim();
-  const court = ($("myCourt")?.value || "").trim();
-
-  if (!date) {
-    setMsg("請先選擇日期。");
-    return;
-  }
+  const date = ($("myDate")?.value || "").trim();   // 可空：不篩選日期
+  const court = ($("myCourt")?.value || "").trim(); // 可空：不篩選球場
 
   try {
     setMsg("載入中…");
 
-    // 後端：GET /api/bookings?date=YYYY-MM-DD&court_id=1(可選)
     const qs = new URLSearchParams();
-    qs.set("date", date);
     if (court) qs.set("court_id", court);
+    if (date) qs.set("date", date);
 
-    const data = await window.api("/api/bookings?" + qs.toString(), { method: "GET" });
+    const url = "/api/my/bookings" + (qs.toString() ? "?" + qs.toString() : "");
+    const data = await window.api(url, { method: "GET" });
     const items = (data && data.items) ? data.items : [];
 
-    // 只顯示我的
-    const mine = items.filter(x => String(x.user_id) === String(me.id));
+    renderRows(items);
 
-    renderRows(mine);
-    setCount(`共 ${mine.length} 筆（${date}${court ? " / " + courtLabel(court) : ""}）`);
-    setMsg(mine.length ? "" : "此日期沒有你的預約。");
+    const label = [
+      "未來未取消",
+      date ? `日期=${date}` : "",
+      court ? courtLabel(court) : ""
+    ].filter(Boolean).join(" / ");
+
+    setCount(`共 ${items.length} 筆（${label}）`);
+    setMsg(items.length ? "" : "目前沒有未來預約。");
+
   } catch (err) {
     setMsg(err?.message || "載入失敗");
   }
 }
 
 function bindUI() {
-  // 日期預設為今天（避免 UTC 偏差）
+  // 預設日期留空（顯示全部未來）
   const d = $("myDate");
-  if (d && !d.value) {
-    if (typeof window.todayLocalYYYYMMDD === "function") d.value = window.todayLocalYYYYMMDD();
-  }
+  if (d) d.value = "";
 
-  $("btnReloadMy")?.addEventListener("click", (e) => {
+  $("btnReloadMy")?.addEventListener("click", (e) => { e.preventDefault(); loadMyBookings(); });
+
+  $("btnClearDate")?.addEventListener("click", (e) => {
     e.preventDefault();
+    if ($("myDate")) $("myDate").value = "";
     loadMyBookings();
   });
 
@@ -145,23 +149,20 @@ function bindUI() {
 
   $("btnLogin")?.addEventListener("click", (e) => {
     e.preventDefault();
-    // 如果 common.js 有提供開 modal 方法就用它；否則自己開
     const m = $("loginModal");
     if (m) { m.classList.add("is-open"); m.setAttribute("aria-hidden", "false"); }
   });
 
   $("btnLogout")?.addEventListener("click", (e) => {
     e.preventDefault();
-    // 依你現行：清 token + refresh
     if (typeof window.setToken === "function") window.setToken("");
     if (typeof window.setUser === "function") window.setUser(null);
-    ensureLoginOrPrompt();
+    ensureLogin();
     setMsg("已登出。");
-    clearTable();
+    const tb = $("myTbody"); if (tb) tb.innerHTML = "";
     setCount("");
   });
 
-  // 登入狀態改變時，自動刷新
   window.addEventListener("auth:changed", () => loadMyBookings());
 }
 
