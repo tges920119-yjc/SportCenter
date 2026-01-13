@@ -107,8 +107,8 @@
 
       <div class="modal__body">
         <div class="form__group">
-          <label class="form__label">帳號（display_name）</label>
-          <input id="loginName" class="input" placeholder="Reminder: 使用 display_name" autocomplete="username" />
+          <label class="form__label">帳號</label>
+          <input id="loginName" class="input" placeholder="輸入帳號" autocomplete="username" />
         </div>
 
         <div class="form__group">
@@ -253,9 +253,21 @@
 
     window.Auth = Auth;
 
-    document.addEventListener("click", (e) => {
-      const t = e.target;
-      if (t && t.getAttribute && t.getAttribute("data-close") === "1") Auth.closeModal();
+    document.addEventListener("DOMContentLoaded", () => {
+      const modal = document.getElementById("loginModal");
+      const panel = modal?.querySelector(".modal__panel");
+      const backdrop = modal?.querySelector(".modal__backdrop");
+
+      // 點 backdrop 才關
+      if (backdrop) backdrop.addEventListener("click", () => Auth.closeModal());
+
+      // 點 X 才關
+      modal?.querySelectorAll('[data-close="1"]').forEach(el => {
+        el.addEventListener("click", (e) => { e.preventDefault(); Auth.closeModal(); });
+      });
+
+      // panel 內部點擊不關（阻止冒泡到 backdrop）
+      if (panel) panel.addEventListener("click", (e) => e.stopPropagation());
     });
 
     document.addEventListener("DOMContentLoaded", async () => {
