@@ -1,15 +1,10 @@
 (() => {
   "use strict";
-
   console.log("[common.js] loaded OK");
 
-  // =========================
-  // Config & helpers
-  // =========================
   const $ = (id) => document.getElementById(id);
 
-  // 如果你有在別處設定 window.API_BASE，就會優先用你的
-  // 沒有的話就用同網域（例如 booking.novrise.org）
+  // 如果沒設定 API_BASE，就用同網域
   if (!window.API_BASE) window.API_BASE = "";
 
   function todayLocalYYYYMMDD() {
@@ -21,6 +16,7 @@
   }
   window.todayLocalYYYYMMDD = todayLocalYYYYMMDD;
 
+  // ===== token storage (optional) =====
   function getToken() {
     return localStorage.getItem("token") || "";
   }
@@ -28,39 +24,34 @@
     if (!t) localStorage.removeItem("token");
     else localStorage.setItem("token", t);
   }
-  function setUser(u) {
-    if (!u) localStorage.removeItem("user");
-    else localStorage.setItem("user", JSON.stringify(u));
-  }
-  function getUser() {
-    try {
-      const s = localStorage.getItem("user");
-      return s ? JSON.parse(s) : null;
-    } catch {
-      return null;
-    }
-  }
-
   window.getToken = getToken;
   window.setToken = setToken;
-  window.setUser = setUser;
 
-  // 統一 API 呼叫：自動帶 Authorization
+  // ===== API helper (IMPORTANT: credentials include for cookie session) =====
   async function api(path, options = {}) {
     const url = (window.API_BASE || "") + path;
+
     const headers = Object.assign(
       { "Content-Type": "application/json" },
       options.headers || {}
     );
 
+    // token login (optional)
     const token = getToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (token && !headers.Authorization) {
+      headers.Authorization = `Bearer ${token}`;
+    }
 
-    const resp = await fetch(url, { ...options, headers });
+    const resp = await fetch(url, {
+      method: options.method || "GET",
+      headers,
+      body: options.body,
+      credentials: "include", // ✅ 讓 cookie session 正常運作
+    });
 
-    // 嘗試解析 JSON / 文字
     const ctype = resp.headers.get("content-type") || "";
     let data = null;
+
     if (ctype.includes("application/json")) {
       try { data = await resp.json(); } catch { data = null; }
     } else {
@@ -68,7 +59,6 @@
     }
 
     if (!resp.ok) {
-      // FastAPI 常見錯誤格式 {"detail":"..."}
       const msg =
         (data && typeof data === "object" && (data.detail || data.message)) ||
         (typeof data === "string" && data) ||
@@ -82,6 +72,7 @@
   }
   window.api = api;
 
+  // ===== UI helpers =====
   function setNavLoginUI(isLoggedIn, nameText = "") {
     const meName = $("meName") || $("navUserName");
     const btnLogin = $("btnLogin");
@@ -92,43 +83,11 @@
     if (btnLogout) btnLogout.hidden = !isLoggedIn;
   }
 
-  // refreshMe：抓 /api/me（如果你後端不是這個也不會炸）
-  async function refreshMe() {
-    const token = getToken();
-    if (!token) {
-      setNavLoginUI(false, "");
-      return null;
-    }
-    try {
-      // 你後端若不是 /api/me，這裡會 catch，UI 仍可用
-      const me = await api("/api/me", { method: "GET" });
-      setUser(me);
-      const display =
-        me?.display_name ||
-        me?.username ||
-        me?.name ||
-        me?.email ||
-        "";
-      setNavLoginUI(true, display);
-      return me;
-    } catch (e) {
-      console.warn("[common.js] refreshMe failed:", e?.message || e);
-      // token 失效就清掉
-      setToken("");
-      setUser(null);
-      setNavLoginUI(false, "");
-      return null;
-    }
-  }
-  window.refreshMe = refreshMe;
-
-  // =========================
-  // Modal controls
-  // =========================
+  // ===== Modal =====
   function openLoginModal() {
     const modal = $("loginModal");
     if (!modal) {
-      alert("找不到 loginModal（請確認 HTML 有 <div id='loginModal' ...> ）");
+      alert("找不到 #loginModal，請確認 index.html 有登入 Modal");
       return;
     }
     modal.classList.add("is-open");
@@ -151,7 +110,7 @@
     const panelLogin = $("panelLogin");
     const panelReg = $("panelRegister");
 
-    // 若你的頁面沒有 tab（只有登入），就跳過，不要報錯
+    // 若頁面沒有做 tabs，就不處理
     if (!tabLogin || !tabReg || !panelLogin || !panelReg) return;
 
     const isLogin = which === "login";
@@ -164,123 +123,146 @@
     const rm = $("regMsg"); if (rm) rm.textContent = "";
   }
 
-  // =========================
-  // Auth actions (with safe fallbacks)
-  // =========================
+  // ===== Auth =====
+  async function refreshMe() {
+    try {
+      const me = await api("/api/auth/me", { method: "GET" });
+      setNavLoginUI(true, me?.display_name || "");
+      return me;
+    } catch (e) {
+      // 沒登入 / token 無效 / cookie 不在
+      setNavLoginUI(false, "");
+      return null;
+    }
+  }
+  window.refreshMe = refreshMe;
+
   async function doLogin() {
-    const name = ($("loginName")?.value || "").trim();
-    const pass = ($("loginPass")?.value || "").trim();
     const msg = $("loginMsg");
     if (msg) msg.textContent = "";
 
-    if (!name || !pass) {
+    const display_name = ($("loginName")?.value || "").trim();
+    const password = ($("loginPass")?.value || "").trim();
+
+    if (!display_name || !password) {
       if (msg) msg.textContent = "請輸入帳號與密碼";
       return;
     }
 
+    // ✅ 先用 token 登入（GitHub Pages / 跨網域更穩）
     try {
-      // ✅ 你後端若不是這個路徑，會顯示錯誤訊息，但按鈕仍有反應
-      const r = await api("/api/auth/login", {
+      if (msg) msg.textContent = "登入中…";
+      const r = await api("/api/auth/login_token", {
         method: "POST",
-        body: JSON.stringify({ username: name, password: pass })
+        body: JSON.stringify({ display_name, password })
       });
 
-      const token = r?.token || r?.access_token || "";
-      if (token) setToken(token);
+      if (r?.token) setToken(r.token);
 
-      // 嘗試 refreshMe 更新右上角
       await refreshMe();
-
       if (msg) msg.textContent = "登入成功";
       closeLoginModal();
-    } catch (e) {
-      console.error(e);
-      if (msg) msg.textContent = e?.message || "登入失敗（請確認後端登入 API 路徑）";
+      return;
+    } catch (e1) {
+      console.warn("[login_token failed] fallback to cookie login:", e1?.message);
+    }
+
+    // ✅ fallback：cookie session 登入
+    try {
+      if (msg) msg.textContent = "登入中…";
+      await api("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ display_name, password })
+      });
+
+      // cookie 會由 server set-cookie；refreshMe 需要 credentials include 才會成功
+      await refreshMe();
+      if (msg) msg.textContent = "登入成功";
+      closeLoginModal();
+    } catch (e2) {
+      console.error(e2);
+      if (msg) msg.textContent = e2?.message || "登入失敗";
     }
   }
 
   async function doRegister() {
-    const display = ($("regDisplayName")?.value || "").trim();
-    const name = ($("regName")?.value || "").trim();
-    const pass = ($("regPass")?.value || "").trim();
     const msg = $("regMsg");
     if (msg) msg.textContent = "";
 
-    if (!display || !name || !pass) {
-      if (msg) msg.textContent = "請輸入顯示名稱、帳號、密碼";
+    const display_name = ($("regName")?.value || "").trim(); // ✅ 對齊後端：display_name
+    const password = ($("regPass")?.value || "").trim();
+    const email = ($("regEmail")?.value || "").trim();
+    const phone = ($("regPhone")?.value || "").trim();
+
+    if (!display_name || !password) {
+      if (msg) msg.textContent = "請輸入帳號與密碼（密碼至少 6 碼）";
       return;
     }
 
     try {
+      if (msg) msg.textContent = "註冊中…";
       await api("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ display_name: display, username: name, password: pass })
+        body: JSON.stringify({
+          display_name,
+          password,
+          email: email || null,
+          phone: phone || null
+        })
       });
 
       if (msg) msg.textContent = "註冊成功，請登入";
       setTab("login");
 
-      // 幫你把帳密帶回登入（方便測）
-      const ln = $("loginName"); if (ln) ln.value = name;
-      const lp = $("loginPass"); if (lp) lp.value = pass;
+      const ln = $("loginName"); if (ln) ln.value = display_name;
+      const lp = $("loginPass"); if (lp) lp.value = password;
     } catch (e) {
       console.error(e);
-      if (msg) msg.textContent = e?.message || "註冊失敗（請確認後端註冊 API 路徑）";
+      if (msg) msg.textContent = e?.message || "註冊失敗";
     }
   }
 
-  // =========================
-  // Wire up DOM events
-  // =========================
-  document.addEventListener("DOMContentLoaded", async () => {
-    // UI init
-    const u = getUser();
-    if (getToken()) {
-      setNavLoginUI(true, u?.display_name || u?.username || "");
-    } else {
-      setNavLoginUI(false, "");
-    }
+  async function doLogout() {
+    // 兩種都清掉
+    setToken("");
+    try { await api("/api/auth/logout", { method: "POST" }); } catch (_) {}
+    setNavLoginUI(false, "");
+    closeLoginModal();
+  }
 
-    // Login open
+  // ===== Wire events =====
+  document.addEventListener("DOMContentLoaded", async () => {
+    // open modal
     $("btnLogin")?.addEventListener("click", openLoginModal);
 
-    // Logout
-    $("btnLogout")?.addEventListener("click", async () => {
-      setToken("");
-      setUser(null);
-      setNavLoginUI(false, "");
-      closeLoginModal();
-    });
+    // logout
+    $("btnLogout")?.addEventListener("click", doLogout);
 
-    // Modal close behaviors
+    // close: overlay / X / ESC
     const modal = $("loginModal");
     if (modal) {
-      // 點遮罩 or X 關閉（都用 data-close="1"）
       modal.addEventListener("click", (e) => {
         const t = e.target;
-        if (t && t.getAttribute && t.getAttribute("data-close") === "1") {
-          closeLoginModal();
-        }
+        if (t?.getAttribute?.("data-close") === "1") closeLoginModal();
       });
-      // 點 panel 不要冒泡關閉
       modal.querySelector(".modal__panel")?.addEventListener("click", (e) => e.stopPropagation());
     }
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeLoginModal();
     });
 
-    // Tabs (if exist)
+    // tabs
     $("tabLogin")?.addEventListener("click", () => setTab("login"));
     $("tabRegister")?.addEventListener("click", () => setTab("register"));
 
-    // Buttons
+    // buttons
     $("btnDoLogin")?.addEventListener("click", doLogin);
     $("btnDoRegister")?.addEventListener("click", doRegister);
 
-    // Default tab
+    // default tab
     setTab("login");
 
-    // Try refreshMe (won't break if API not ready)
+    // initial me
     await refreshMe();
   });
 })();

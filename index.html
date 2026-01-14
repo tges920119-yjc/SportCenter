@@ -101,7 +101,7 @@
         <!-- login -->
         <div id="panelLogin">
           <div class="field">
-            <label class="label" for="loginName">帳號</label>
+            <label class="label" for="loginName">帳號（display_name）</label>
             <input id="loginName" class="input" autocomplete="username" />
           </div>
           <div class="field">
@@ -116,16 +116,24 @@
         <!-- register -->
         <div id="panelRegister" hidden>
           <div class="field">
-            <label class="label" for="regDisplayName">顯示名稱</label>
-            <input id="regDisplayName" class="input" autocomplete="name" />
-          </div>
-          <div class="field">
-            <label class="label" for="regName">帳號</label>
+            <label class="label" for="regName">帳號（display_name）</label>
             <input id="regName" class="input" autocomplete="username" />
           </div>
+
           <div class="field">
-            <label class="label" for="regPass">密碼</label>
+            <label class="label" for="regPass">密碼（至少 6 碼）</label>
             <input id="regPass" class="input" type="password" autocomplete="new-password" />
+          </div>
+
+          <!-- 可選：email/phone（對齊你的 RegisterIn） -->
+          <div class="field">
+            <label class="label" for="regEmail">Email（可選）</label>
+            <input id="regEmail" class="input" type="email" autocomplete="email" />
+          </div>
+
+          <div class="field">
+            <label class="label" for="regPhone">電話（可選）</label>
+            <input id="regPhone" class="input" autocomplete="tel" />
           </div>
 
           <button id="btnDoRegister" class="btn btn--primary w100" type="button">註冊</button>

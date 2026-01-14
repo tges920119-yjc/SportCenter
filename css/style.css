@@ -238,9 +238,15 @@ img[src*="LOGO" i]{
   gap:10px;
 }
 
-/* modal 顯示/隱藏 */
+/* ===== modal base ===== */
 .modal{ display:none; position:fixed; inset:0; z-index:9999; }
 .modal.is-open{ display:block; }
+.modal__overlay{ position:absolute; inset:0; background:rgba(0,0,0,.35); }
+.modal__panel{ position:relative; z-index:1; width:min(720px, calc(100% - 28px)); margin:64px auto 0; background:#fff; border-radius:18px; overflow:hidden; }
+.modal__head{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(0,0,0,.08); }
+.modal__body{ padding:16px; }
+.modal__close{ width:36px; height:36px; border-radius:12px; border:1px solid rgba(0,0,0,.12); background:#fff; cursor:pointer; }
+
 
 /* ===== modal tabs (login/register) ===== */
 .tabs{
