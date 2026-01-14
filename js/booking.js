@@ -159,13 +159,24 @@
 
   // ---------- UI helpers ----------
   function setCourtSelectOptions(courts) {
+    if (!elCourtSelect) return;
+
+    // ✅ 記住目前選的 courtId
+    const prev = String(elCourtSelect.value || "");
+
     elCourtSelect.innerHTML = "";
     const items = courts?.items || [];
+
     for (const c of items) {
       const op = document.createElement("option");
       op.value = String(c.id);
       op.textContent = c.name || `Court ${c.id}`;
       elCourtSelect.appendChild(op);
+    }
+
+    // ✅ 重建後還原原本選擇（找不到就不管）
+    if (prev && items.some(x => String(x.id) === prev)) {
+      elCourtSelect.value = prev;
     }
   }
 

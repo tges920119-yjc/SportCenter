@@ -5,31 +5,29 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SportCenter - 我的預約</title>
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="icon" href="LOGO.png">
+  <link rel="icon" href="LOGO.PNG">
 </head>
 
 <body class="theme-sport">
-  <header class="header header--sport">
-    <div class="container header__inner header__inner--sport">
-      <a class="brand brand--sport" href="index.html" aria-label="SportCenter">
-        <img src="LOGO.png" alt="logo" class="brand__logo" />
-        <div class="brand__text">
-          <div class="brand__title">SportCenter</div>
-          <div class="brand__subtitle">球場預約系統</div>
-        </div>
-      </a>
-
-      <nav class="nav nav--sport" aria-label="主選單">
-        <a class="nav__link" href="index.html">預約</a>
-        <a class="nav__link" href="venues.html">場館</a>
-        <a class="nav__link is-active" href="my.html">我的預約</a>
-      </nav>
-
-      <div class="nav__actions nav__actions--sport">
-        <span id="navUserName" class="nav__user"></span>
-        <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
-        <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
+  <header class="topbar">
+    <div class="topbar__left">
+      <img class="brand__logo" src="LOGO.png" alt="SportCenter" />
+      <div class="brand__text">
+        <div class="brand__name">SportCenter</div>
+        <div class="brand__sub">球場預約系統</div>
       </div>
+    </div>
+
+    <nav class="topbar__nav">
+      <a class="nav__item" href="index.html">預約</a>
+      <a class="nav__item" href="venues.html">場館</a>
+      <a class="nav__item is-active" href="my.html">我的預約</a>
+    </nav>
+
+    <div class="topbar__right">
+      <span id="meName" class="meName"></span>
+      <button id="btnLogin" class="btn btn--ghost" type="button">登入</button>
+      <button id="btnLogout" class="btn btn--ghost" type="button" hidden>登出</button>
     </div>
   </header>
 
