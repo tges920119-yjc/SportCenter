@@ -202,3 +202,38 @@ img[src*="LOGO" i]{
   max-height: 48px;
   object-fit: contain;
 }
+
+/* ===== My bookings list ===== */
+.myList{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:12px;
+}
+
+.myCard{
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:16px;
+  padding:14px;
+  background:#fff;
+}
+
+.myCard__title{
+  font-weight:900;
+  margin-bottom:6px;
+}
+
+.myCard__meta{
+  font-weight:700;
+  color:#374151;
+  margin-bottom:6px;
+}
+
+.myCard__note{
+  margin-bottom:10px;
+}
+
+.myCard__actions{
+  display:flex;
+  gap:10px;
+}

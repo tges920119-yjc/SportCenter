@@ -131,3 +131,53 @@
   window.openModal = openModal;
   window.closeModal = closeModal;
 })();
+
+// ===== force bind login modal (failsafe) =====
+(function () {
+  function $(id) { return document.getElementById(id); }
+
+  function openLoginModal() {
+    const modal = $("loginModal");
+    if (!modal) {
+      console.error("[common.js] loginModal not found");
+      alert("loginModal 不存在：請確認 index.html / my.html 有 <div id='loginModal' class='modal'> ...");
+      return;
+    }
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeLoginModal() {
+    const modal = $("loginModal");
+    if (!modal) return;
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const btnLogin = $("btnLogin");
+    const btnLogout = $("btnLogout");
+    const modal = $("loginModal");
+
+    if (!btnLogin) console.error("[common.js] btnLogin not found");
+    if (!modal) console.error("[common.js] loginModal not found");
+
+    btnLogin?.addEventListener("click", openLoginModal);
+
+    // 點遮罩 / 叉叉關閉
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        const t = e.target;
+        if (t && t.getAttribute && t.getAttribute("data-close") === "1") closeLoginModal();
+      });
+      modal.querySelector(".modal__panel")?.addEventListener("click", (e) => e.stopPropagation());
+    }
+
+    // 登出只是先關閉 modal（避免卡住），實際登出你原本 common.js 應該有做
+    btnLogout?.addEventListener("click", closeLoginModal);
+  });
+
+  // 讓 booking.js 也能叫
+  window.openLoginModal = openLoginModal;
+  window.closeLoginModal = closeLoginModal;
+})();
