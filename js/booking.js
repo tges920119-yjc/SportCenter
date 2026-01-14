@@ -191,7 +191,7 @@
     if (times.length) elTimeSelect.value = times[0];
   }
 
-  // 你要的表頭：時間 羽球A 羽球B | 籃球A 籃球B（中間有線）
+  // 你要的表頭：時間 羽球A場 羽球B場 | 籃球A場 籃球B場（中間有線）
   function renderSlots(bookedMap, courts, TIMES) {
     elSlotsGrid.innerHTML = "";
 
