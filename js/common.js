@@ -181,3 +181,6 @@
   window.openLoginModal = openLoginModal;
   window.closeLoginModal = closeLoginModal;
 })();
+
+.modal{ display:none; }
+.modal.is-open{ display:block; }
