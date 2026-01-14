@@ -132,52 +132,132 @@
   window.closeModal = closeModal;
 })();
 
-// ===== force bind login modal (failsafe) =====
+// ===== Login/Register modal binding (final) =====
 (function () {
-  function $(id) { return document.getElementById(id); }
+  const $ = (id) => document.getElementById(id);
 
-  function openLoginModal() {
+  function openModal() {
     const modal = $("loginModal");
-    if (!modal) {
-      console.error("[common.js] loginModal not found");
-      alert("loginModal 不存在：請確認 index.html / my.html 有 <div id='loginModal' class='modal'> ...");
-      return;
-    }
+    if (!modal) return;
     modal.classList.add("is-open");
     modal.setAttribute("aria-hidden", "false");
   }
 
-  function closeLoginModal() {
+  function closeModal() {
     const modal = $("loginModal");
     if (!modal) return;
     modal.classList.remove("is-open");
     modal.setAttribute("aria-hidden", "true");
   }
 
+  function setTab(which) {
+    const tabLogin = $("tabLogin");
+    const tabReg = $("tabRegister");
+    const panelLogin = $("panelLogin");
+    const panelReg = $("panelRegister");
+    if (!tabLogin || !tabReg || !panelLogin || !panelReg) return;
+
+    const isLogin = which === "login";
+    tabLogin.classList.toggle("is-active", isLogin);
+    tabReg.classList.toggle("is-active", !isLogin);
+    panelLogin.hidden = !isLogin;
+    panelReg.hidden = isLogin;
+
+    // 清訊息
+    const lm = $("loginMsg"); if (lm) lm.textContent = "";
+    const rm = $("regMsg"); if (rm) rm.textContent = "";
+  }
+
+  async function doLogin() {
+    const name = ($("loginName")?.value || "").trim();
+    const pass = ($("loginPass")?.value || "").trim();
+    const msg = $("loginMsg");
+    if (msg) msg.textContent = "";
+
+    if (!name || !pass) {
+      if (msg) msg.textContent = "請輸入帳號與密碼";
+      return;
+    }
+
+    try {
+      // 依你後端實作調整：這裡假設 POST /api/auth/login
+      const r = await window.api("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ username: name, password: pass })
+      });
+
+      // r.token / r.user 視你後端回傳
+      if (r?.token && typeof window.setToken === "function") window.setToken(r.token);
+      if (r?.user && typeof window.setUser === "function") window.setUser(r.user);
+
+      if (typeof window.refreshMe === "function") await window.refreshMe();
+      closeModal();
+    } catch (e) {
+      console.error(e);
+      if (msg) msg.textContent = e?.message || "登入失敗";
+    }
+  }
+
+  async function doRegister() {
+    const display = ($("regDisplayName")?.value || "").trim();
+    const name = ($("regName")?.value || "").trim();
+    const pass = ($("regPass")?.value || "").trim();
+    const msg = $("regMsg");
+    if (msg) msg.textContent = "";
+
+    if (!display || !name || !pass) {
+      if (msg) msg.textContent = "請輸入顯示名稱、帳號、密碼";
+      return;
+    }
+
+    try {
+      // 依你後端實作調整：這裡假設 POST /api/auth/register
+      await window.api("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ display_name: display, username: name, password: pass })
+      });
+
+      if (msg) msg.textContent = "註冊成功，請登入";
+      setTab("login");
+      $("loginName").value = name;
+      $("loginPass").value = pass;
+    } catch (e) {
+      console.error(e);
+      if (msg) msg.textContent = e?.message || "註冊失敗";
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
-    const btnLogin = $("btnLogin");
-    const btnLogout = $("btnLogout");
+    // open
+    $("btnLogin")?.addEventListener("click", openModal);
+
+    // close: overlay / X / ESC
     const modal = $("loginModal");
-
-    if (!btnLogin) console.error("[common.js] btnLogin not found");
-    if (!modal) console.error("[common.js] loginModal not found");
-
-    btnLogin?.addEventListener("click", openLoginModal);
-
-    // 點遮罩 / 叉叉關閉
     if (modal) {
       modal.addEventListener("click", (e) => {
         const t = e.target;
-        if (t && t.getAttribute && t.getAttribute("data-close") === "1") closeLoginModal();
+        if (t?.getAttribute?.("data-close") === "1") closeModal();
       });
       modal.querySelector(".modal__panel")?.addEventListener("click", (e) => e.stopPropagation());
     }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
 
-    // 登出只是先關閉 modal（避免卡住），實際登出你原本 common.js 應該有做
-    btnLogout?.addEventListener("click", closeLoginModal);
+    // tabs
+    $("tabLogin")?.addEventListener("click", () => setTab("login"));
+    $("tabRegister")?.addEventListener("click", () => setTab("register"));
+
+    // actions
+    $("btnDoLogin")?.addEventListener("click", doLogin);
+    $("btnDoRegister")?.addEventListener("click", doRegister);
+
+    // default tab
+    setTab("login");
   });
 
-  // 讓 booking.js 也能叫
-  window.openLoginModal = openLoginModal;
-  window.closeLoginModal = closeLoginModal;
+  // 給其他頁面使用
+  window.openLoginModal = openModal;
+  window.closeLoginModal = closeModal;
 })();
+

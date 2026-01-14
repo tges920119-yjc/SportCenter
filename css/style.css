@@ -240,3 +240,23 @@ img[src*="LOGO" i]{
 
 .modal{ display:none; }
 .modal.is-open{ display:block; }
+
+/* ===== modal tabs (login/register) ===== */
+.tabs{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+}
+.tab{
+  flex:1;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.12);
+  background:#fff;
+  font-weight:900;
+  cursor:pointer;
+}
+.tab.is-active{
+  border-color: rgba(22,163,74,.45);
+  background: rgba(22,163,74,.12);
+}
