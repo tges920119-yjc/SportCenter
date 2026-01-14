@@ -293,3 +293,28 @@ img[src*="LOGO" i]{
   height: 32px;
   border-radius: 10px;
 }
+
+/* ===== form spacing (login/register) ===== */
+.field{
+  margin-bottom: 12px;  /* 原本太擠就加大 */
+}
+
+.label{
+  display:block;
+  margin-bottom: 6px;
+}
+
+.input, .select{
+  height: 42px;
+}
+
+/* tabs 和第一個欄位也留點空間 */
+.tabs{ margin-bottom: 14px; }
+
+/* modal body 內的按鈕跟訊息也留距離 */
+.modal__body .w100{
+  margin-top: 6px;
+}
+.modal__body .msg{
+  margin-top: 10px;
+}
