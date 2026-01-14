@@ -237,3 +237,6 @@ img[src*="LOGO" i]{
   display:flex;
   gap:10px;
 }
+
+.modal{ display:none; }
+.modal.is-open{ display:block; }
