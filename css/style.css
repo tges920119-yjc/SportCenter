@@ -238,7 +238,8 @@ img[src*="LOGO" i]{
   gap:10px;
 }
 
-.modal{ display:none; }
+/* modal 顯示/隱藏 */
+.modal{ display:none; position:fixed; inset:0; z-index:9999; }
 .modal.is-open{ display:block; }
 
 /* ===== modal tabs (login/register) ===== */
