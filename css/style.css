@@ -267,3 +267,29 @@ img[src*="LOGO" i]{
   border-color: rgba(22,163,74,.45);
   background: rgba(22,163,74,.12);
 }
+
+/* ===== modal size tuning (smaller) ===== */
+.modal__panel{
+  width: min(460px, calc(100% - 24px));
+  margin: 48px auto 0;
+  border-radius: 16px;
+}
+
+.modal__head{
+  padding: 10px 12px;
+}
+
+.modal__body{
+  padding: 12px;
+}
+
+.modal__title{
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.modal__close{
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}

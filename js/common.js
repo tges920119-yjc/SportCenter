@@ -238,15 +238,21 @@
     // logout
     $("btnLogout")?.addEventListener("click", doLogout);
 
-    // close: overlay / X / ESC
+    // ===== Modal close: overlay / X / ESC (hard bind) =====
     const modal = $("loginModal");
-    if (modal) {
-      modal.addEventListener("click", (e) => {
-        const t = e.target;
-        if (t?.getAttribute?.("data-close") === "1") closeLoginModal();
-      });
-      modal.querySelector(".modal__panel")?.addEventListener("click", (e) => e.stopPropagation());
-    }
+    const overlay = modal?.querySelector(".modal__overlay");
+    const closeBtn = modal?.querySelector(".modal__close");
+
+    // 點遮罩關閉
+    overlay?.addEventListener("click", closeLoginModal);
+
+    // 點 X 關閉（✅ 直接綁，不靠 data-close）
+    closeBtn?.addEventListener("click", closeLoginModal);
+
+    // 點 panel 內不要冒泡到 overlay
+    modal?.querySelector(".modal__panel")?.addEventListener("click", (e) => e.stopPropagation());
+
+    // ESC 關閉
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeLoginModal();
     });
