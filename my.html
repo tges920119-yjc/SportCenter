@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SportCenter - 我的預約</title>
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="icon" href="LOGO.png">
 </head>
 
 <body>
@@ -34,44 +33,75 @@
   <main class="container">
     <section class="hero">
       <h1 class="hero__title">我的預約</h1>
-      <p class="hero__desc">顯示尚未取消、且時間尚未開始的預約。</p>
+      <p class="hero__desc">只顯示「時間未到」且未取消的預約，可直接取消。</p>
     </section>
 
     <section class="panel">
-      <div class="panel__title">預約列表</div>
-
-      <div class="actions" style="margin-top:0">
+      <div class="myTopRow">
+        <div id="myMsg" class="msg muted"></div>
         <button id="btnReloadMy" class="btn btn--ghost" type="button">重新整理</button>
-        <div class="msgs">
-          <div id="myMsg" class="msg muted"></div>
-        </div>
       </div>
 
       <div id="myList" class="myList"></div>
     </section>
   </main>
 
-  <!-- 登入 Modal（同 index） -->
+  <!-- 登入/註冊 Modal -->
   <div id="loginModal" class="modal" aria-hidden="true">
     <div class="modal__overlay" data-close="1"></div>
+
     <div class="modal__panel" role="dialog" aria-modal="true">
       <div class="modal__head">
-        <div class="modal__title">登入</div>
-        <button class="modal__close" type="button" data-close="1">✕</button>
+        <div class="modal__title">帳號</div>
+        <button class="modal__close" type="button" data-close="1" aria-label="關閉">✕</button>
       </div>
 
       <div class="modal__body">
-        <div class="field">
-          <label class="label" for="loginName">帳號</label>
-          <input id="loginName" class="input" autocomplete="username" />
-        </div>
-        <div class="field">
-          <label class="label" for="loginPass">密碼</label>
-          <input id="loginPass" class="input" type="password" autocomplete="current-password" />
+        <div class="tabs">
+          <button id="tabLogin" class="tab is-active" type="button">登入</button>
+          <button id="tabRegister" class="tab" type="button">註冊</button>
         </div>
 
-        <button id="btnDoLogin" class="btn btn--primary w100" type="button">登入</button>
-        <div id="loginMsg" class="msg muted"></div>
+        <!-- login -->
+        <div id="panelLogin">
+          <div class="field">
+            <label class="label" for="loginName">帳號</label>
+            <input id="loginName" class="input" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label class="label" for="loginPass">密碼</label>
+            <input id="loginPass" class="input" type="password" autocomplete="current-password" />
+          </div>
+
+          <button id="btnDoLogin" class="btn btn--primary w100" type="button">登入</button>
+          <div id="loginMsg" class="msg muted"></div>
+        </div>
+
+        <!-- register -->
+        <div id="panelRegister" hidden>
+          <div class="field">
+            <label class="label" for="regName">帳號</label>
+            <input id="regName" class="input" autocomplete="username" />
+          </div>
+
+          <div class="field">
+            <label class="label" for="regPass">密碼</label>
+            <input id="regPass" class="input" type="password" autocomplete="new-password" />
+          </div>
+
+          <div class="field">
+            <label class="label" for="regEmail">Email（非必填）</label>
+            <input id="regEmail" class="input" type="email" autocomplete="email" />
+          </div>
+
+          <div class="field">
+            <label class="label" for="regPhone">電話（非必填）</label>
+            <input id="regPhone" class="input" autocomplete="tel" />
+          </div>
+
+          <button id="btnDoRegister" class="btn btn--primary w100" type="button">註冊</button>
+          <div id="regMsg" class="msg muted"></div>
+        </div>
       </div>
     </div>
   </div>

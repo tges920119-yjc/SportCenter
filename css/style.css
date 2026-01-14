@@ -294,27 +294,43 @@ img[src*="LOGO" i]{
   border-radius: 10px;
 }
 
-/* ===== form spacing (login/register) ===== */
-.field{
-  margin-bottom: 12px;  /* 原本太擠就加大 */
+/* ===== modal spacing (force) ===== */
+.modal .field { margin-bottom: 14px !important; }
+.modal .label { display:block; margin-bottom: 8px !important; }
+
+/* ===== my.html layout ===== */
+.myTopRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+.myList{ margin-top:12px; }
+
+/* ===== my booking cards ===== */
+.myCard{
+  border:1px solid rgba(0,0,0,.10);
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:12px;
+  background:#fff;
+}
+.myCard__title{
+  font-weight:900;
+  font-size:16px;
+  margin-bottom:6px;
+}
+.myCard__time{
+  font-weight:700;
+  opacity:.9;
+  margin-bottom:6px;
+}
+.myCard__meta{
+  opacity:.85;
+  margin-bottom:8px;
+}
+.myCard__actions{
+  display:flex;
+  justify-content:flex-end;
 }
 
-.label{
-  display:block;
-  margin-bottom: 6px;
-}
-
-.input, .select{
-  height: 42px;
-}
-
-/* tabs 和第一個欄位也留點空間 */
-.tabs{ margin-bottom: 14px; }
-
-/* modal body 內的按鈕跟訊息也留距離 */
-.modal__body .w100{
-  margin-top: 6px;
-}
-.modal__body .msg{
-  margin-top: 10px;
-}

@@ -268,7 +268,11 @@
     // default tab
     setTab("login");
 
-    // initial me
-    await refreshMe();
+    // ✅ 沒有 token 就不要打 /api/auth/me，避免 401 噪音
+    if (typeof window.getToken === "function" && window.getToken()) {
+      await refreshMe();
+    } else {
+      setNavLoginUI(false, "");
+    }
   });
 })();

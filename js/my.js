@@ -15,13 +15,6 @@
     elMsg.classList.toggle("muted", !isErr);
   }
 
-  function ensureLoginOrPrompt() {
-    // 你現在支援 token 與 cookie
-    const hasToken = (typeof window.getToken === "function") && !!window.getToken();
-    // cookie 無法直接判斷，就靠 refreshMe
-    return hasToken;
-  }
-
   function fmtDT(s) {
     const d = new Date(s);
     const y = d.getFullYear();
@@ -64,7 +57,11 @@
 
       const title = document.createElement("div");
       title.className = "myCard__title";
-      title.textContent = `${courtName}｜${fmtDT(b.start_at)} - ${fmtDT(b.end_at)}`;
+      title.textContent = `${courtName}`;
+
+      const time = document.createElement("div");
+      time.className = "myCard__time";
+      time.textContent = `${fmtDT(b.start_at)} － ${fmtDT(b.end_at)}`;
 
       const meta = document.createElement("div");
       meta.className = "myCard__meta";
@@ -100,6 +97,7 @@
       actions.appendChild(btnCancel);
 
       card.appendChild(title);
+      card.appendChild(time);
       card.appendChild(meta);
       if (note.textContent) card.appendChild(note);
       card.appendChild(actions);
@@ -113,23 +111,17 @@
     msg("載入中…");
 
     try {
-      // 先刷新登入狀態（會更新右上角）
-      if (typeof window.refreshMe === "function") {
-        await window.refreshMe(); // 沒登入會回 null，不會炸
-      }
+      // refreshMe 會更新右上角；沒登入會回 null，不會炸
+      if (typeof window.refreshMe === "function") await window.refreshMe();
 
-      // 抓 courts name map（即使失敗也不影響）
       const courtsMap = await fetchCourtsMap();
 
-      // 抓我的預約（需要登入）
       const resp = await window.api("/api/my/bookings", { method: "GET" });
       render(resp?.items || [], courtsMap);
-
       msg("");
     } catch (e) {
       console.error(e);
 
-      // 若沒登入，提示打開登入框
       if (String(e?.status) === "401" || /Not logged in/i.test(String(e?.message || ""))) {
         msg("請先登入後查看我的預約。", true);
         document.getElementById("btnLogin")?.click();
