@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  console.log("[common.js] loaded OK v20260114-1");
+  console.log("[common.js] loaded OK");
 
   const $ = (id) => document.getElementById(id);
 
